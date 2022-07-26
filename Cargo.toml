@@ -1,0 +1,15 @@
+[package]
+name = "server"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+axum = { version = "0.5.14", features = ["ws"] }
+figment = { version = "0.10.6", features = ["env"] }
+hyper = { version = "0.14.20", features = ["full"] }
+serde = { version = "1.0.140", features = ["derive"] }
+tokio = { version = "1.20.1", features = ["full"] }
+tower = "0.4.13"
+tower-http = { version = "0.3.4", features = ["trace", "fs"] }
+tracing = "0.1.35"
+tracing-subscriber = { version = "0.3.15", features = ["env-filter", "json"] }
