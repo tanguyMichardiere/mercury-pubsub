@@ -29,7 +29,7 @@ struct Config {
 impl Default for Config {
     fn default() -> Self {
         Self {
-            port: 3000,
+            port: 8080,
             log: "server=debug,tower_http=debug".into(),
             log_format: LogFormat::Json,
         }

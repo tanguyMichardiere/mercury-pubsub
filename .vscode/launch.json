@@ -23,7 +23,6 @@
       "request": "launch",
       "name": "Debug executable 'main'",
       "env": {
-        "PORT": "3000",
         "MERCURY_LOG_FORMAT": "pretty"
       },
       "cargo": {

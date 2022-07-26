@@ -5,8 +5,7 @@
 Default values:
 
 ```shell
-PORT="3000"
-# or MERCURY_PORT="3000"
+PORT="8080"  # or MERCURY_PORT="8080"
 MERCURY_LOG="server=debug,tower_http=debug"
 MERCURY_LOG_FORMAT="json"
 ```
