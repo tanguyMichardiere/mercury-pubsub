@@ -24,6 +24,6 @@ RUN npm run build
 
 FROM scratch
 
-COPY --from=rust-builder /usr/src/app/target/release/main /server
+COPY --from=rust-builder /usr/src/app/target/x86_64-unknown-linux-musl/release/main /server
 COPY --from=dashboard-builder /usr/src/app/out /static
 CMD ["/server"]
