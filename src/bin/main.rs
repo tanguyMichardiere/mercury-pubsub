@@ -1,5 +1,5 @@
 use axum::response::IntoResponse;
-use axum::routing::{get, get_service};
+use axum::routing::{get, get_service, MethodRouter};
 use axum::Router;
 use figment::providers::{Env, Serialized};
 use figment::Figment;
@@ -7,7 +7,7 @@ use hyper::StatusCode;
 use serde::{Deserialize, Serialize};
 use std::io;
 use std::net::{IpAddr, Ipv4Addr, SocketAddr};
-use tower_http::services::ServeDir;
+use tower_http::services::{ServeDir, ServeFile};
 use tower_http::trace::TraceLayer;
 use tracing::error;
 use tracing_subscriber::EnvFilter;
@@ -48,6 +48,16 @@ fn app() -> Router {
     Router::new().route("/", get(server::hello))
 }
 
+fn static_dir_service() -> MethodRouter {
+    get_service(ServeDir::new("static").fallback(ServeFile::new("static/404.html")))
+        .handle_error(handle_io_error)
+}
+
+async fn handle_io_error(error: io::Error) -> impl IntoResponse {
+    error!(?error);
+    StatusCode::INTERNAL_SERVER_ERROR
+}
+
 #[tokio::main]
 async fn main() {
     let config: Config = Figment::from(Serialized::defaults(Config::default()))
@@ -60,7 +70,7 @@ async fn main() {
 
     let app = Router::new()
         .nest("/api", app())
-        .fallback(get_service(ServeDir::new("static")).handle_error(handle_io_error))
+        .fallback(static_dir_service())
         .layer(TraceLayer::new_for_http());
 
     axum::Server::bind(&SocketAddr::new(
@@ -70,11 +80,6 @@ async fn main() {
     .serve(app.into_make_service())
     .await
     .expect("server launch");
-}
-
-async fn handle_io_error(error: io::Error) -> impl IntoResponse {
-    error!(?error);
-    StatusCode::INTERNAL_SERVER_ERROR
 }
 
 #[cfg(test)]
@@ -96,6 +101,6 @@ mod tests {
         assert_eq!(response.status(), StatusCode::OK);
 
         let body = hyper::body::to_bytes(response.into_body()).await.unwrap();
-        assert_eq!(&body[..], b"Hello, World!");
+        assert_eq!(&body[..], b"Hello, Mercury!");
     }
 }

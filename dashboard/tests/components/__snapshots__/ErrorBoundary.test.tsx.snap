@@ -1,0 +1,22 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`ErrorBoundary renders unchanged 1`] = `
+<div
+  className="flex h-full flex-col items-center justify-center"
+>
+  <h2>
+    An expected error has occurred, it has been reported
+  </h2>
+  <a
+    href="/"
+  >
+    Home Page
+  </a>
+  <button
+    onClick={[Function]}
+    type="button"
+  >
+    Reload
+  </button>
+</div>
+`;

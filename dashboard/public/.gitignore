@@ -1,0 +1,7 @@
+# next-pwa
+sw.js
+workbox-*.js
+
+# next-sitemap
+robots.txt
+sitemap*.xml
