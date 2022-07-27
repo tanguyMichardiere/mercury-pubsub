@@ -1,6 +1,7 @@
 FROM rust as rust-builder
 
 WORKDIR /usr/src/
+RUN apt-get update && RUN apt-get install -y musl-tools
 RUN rustup target add x86_64-unknown-linux-musl
 
 RUN cargo new app
