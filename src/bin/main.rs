@@ -1,77 +1,28 @@
-use axum::response::IntoResponse;
-use axum::routing::{get, get_service, MethodRouter};
-use axum::Router;
-use figment::providers::{Env, Serialized};
-use figment::Figment;
-use hyper::StatusCode;
-use serde::{Deserialize, Serialize};
-use std::io;
+use dotenv::dotenv;
+use server::config::{config, LogFormat};
+use server::{app, pool};
+use std::env;
 use std::net::{IpAddr, Ipv4Addr, SocketAddr};
-use tower_http::services::{ServeDir, ServeFile};
-use tower_http::trace::TraceLayer;
-use tracing::error;
 use tracing_subscriber::EnvFilter;
 
-#[derive(Deserialize, Serialize)]
-#[serde(rename_all = "lowercase")]
-enum LogFormat {
-    Json,
-    Pretty,
-}
-
-#[derive(Deserialize, Serialize)]
-struct Config {
-    port: u16,
-    log: String,
-    log_format: LogFormat,
-}
-
-impl Default for Config {
-    fn default() -> Self {
-        Self {
-            port: 8080,
-            log: "server=debug,tower_http=debug".into(),
-            log_format: LogFormat::Json,
-        }
-    }
-}
-
 fn tracing_init(env_filter: EnvFilter, log_format: LogFormat) {
-    let sub = tracing_subscriber::fmt().with_env_filter(env_filter);
+    let subscriber_builder = tracing_subscriber::fmt().with_env_filter(env_filter);
     match log_format {
-        LogFormat::Json => sub.json().init(),
-        LogFormat::Pretty => sub.pretty().init(),
+        LogFormat::Json => subscriber_builder.json().init(),
+        LogFormat::Pretty => subscriber_builder.pretty().init(),
     }
-}
-
-fn app() -> Router {
-    Router::new().route("/", get(server::hello))
-}
-
-fn static_dir_service() -> MethodRouter {
-    get_service(ServeDir::new("static").fallback(ServeFile::new("static/404.html")))
-        .handle_error(handle_io_error)
-}
-
-async fn handle_io_error(error: io::Error) -> impl IntoResponse {
-    error!(?error);
-    StatusCode::INTERNAL_SERVER_ERROR
 }
 
 #[tokio::main]
 async fn main() {
-    let config: Config = Figment::from(Serialized::defaults(Config::default()))
-        .merge(Env::raw().only(&["port"]))
-        .merge(Env::prefixed("MERCURY_"))
-        .extract()
-        .expect("environment config parsing");
+    dotenv().ok();
+    let config = config().expect("config parsing");
 
     tracing_init(EnvFilter::new(config.log), config.log_format);
 
-    let app = Router::new()
-        .nest("/api", app())
-        .fallback(static_dir_service())
-        .layer(TraceLayer::new_for_http());
+    let database_url = env::var("DATABASE_URL").expect("DATABASE_URL environment variable");
+    let pool = pool(&database_url).await.expect("database connection");
+    let app = app(pool);
 
     axum::Server::bind(&SocketAddr::new(
         IpAddr::V4(Ipv4Addr::UNSPECIFIED),
@@ -89,12 +40,17 @@ mod tests {
     use axum::http::{Request, StatusCode};
     use tower::ServiceExt;
 
-    #[tokio::test]
+    #[sqlx_database_tester::test(pool(variable = "pool"))]
     async fn hello() {
-        let app = app();
+        let app = app(pool);
 
         let response = app
-            .oneshot(Request::builder().uri("/").body(Body::empty()).unwrap())
+            .oneshot(
+                Request::builder()
+                    .uri("/api/hello")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
             .await
             .unwrap();
 

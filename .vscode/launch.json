@@ -22,9 +22,6 @@
       "type": "lldb",
       "request": "launch",
       "name": "Debug executable 'main'",
-      "env": {
-        "MERCURY_LOG_FORMAT": "pretty"
-      },
       "cargo": {
         "args": ["build", "--bin=main", "--package=server"],
         "filter": {

@@ -5,7 +5,9 @@ import { useQuery } from "@tanstack/react-query";
 import ThemeMenu from "../components/ThemeMenu";
 
 function useHelloQuery() {
-  return useQuery<string>(["/api"], () => fetch("/api").then((response) => response.text()));
+  return useQuery<string>(["/api/hello"], () =>
+    fetch("/api/hello").then((response) => response.text())
+  );
 }
 
 export default function Page(): JSX.Element {
