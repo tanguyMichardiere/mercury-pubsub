@@ -14,7 +14,7 @@ RUN rm src/main.rs
 COPY src src
 COPY sqlx-data.json .
 RUN SQLX_OFFLINE=true cargo build --release --bin=main --package=server --target x86_64-unknown-linux-musl
-RUN sqlx migrate run
+RUN sqlx migrate run --database-url $DATABASE_URL
 
 FROM node:16 as dashboard-builder
 
