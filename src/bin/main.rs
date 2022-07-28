@@ -36,19 +36,44 @@ async fn main() {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use axum::body::Body;
     use axum::http::{Request, StatusCode};
+    use axum::response::Response;
+    use serde_json::{from_str, json, to_string, Value};
+    use server::constants::SESSION_COOKIE_NAME;
+    use std::str;
     use tower::ServiceExt;
 
+    fn get_session_token(response: &Response) -> &str {
+        &response
+            .headers()
+            .get_all("Set-Cookie")
+            .iter()
+            .find(|header_value| {
+                // find the header with the right cookie name
+                header_value
+                    .to_str()
+                    .unwrap()
+                    .starts_with(SESSION_COOKIE_NAME)
+            })
+            .unwrap()
+            .to_str()
+            // extract the cookie value (its length is always 64)
+            .unwrap()[(SESSION_COOKIE_NAME.len() + 1)..(SESSION_COOKIE_NAME.len() + 1 + 64)]
+    }
+
     #[sqlx_database_tester::test(pool(variable = "pool"))]
-    async fn hello() {
+    async fn first_signin() {
         let app = app(pool);
 
         let response = app
             .oneshot(
-                Request::builder()
-                    .uri("/api/hello")
-                    .body(Body::empty())
+                Request::post("/api/auth/create-user")
+                    .header("Content-Type", "application/json")
+                    .body(
+                        to_string(&json!({"name": "name", "password": "password"}))
+                            .unwrap()
+                            .into(),
+                    )
                     .unwrap(),
             )
             .await
@@ -56,7 +81,13 @@ mod tests {
 
         assert_eq!(response.status(), StatusCode::OK);
 
-        let body = hyper::body::to_bytes(response.into_body()).await.unwrap();
-        assert_eq!(&body[..], b"Hello, Mercury!");
+        let session_token = get_session_token(&response);
+
+        assert_eq!(session_token.len(), 64);
+
+        from_str::<Value>(
+            str::from_utf8(&hyper::body::to_bytes(response.into_body()).await.unwrap()).unwrap(),
+        )
+        .unwrap();
     }
 }

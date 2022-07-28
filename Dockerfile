@@ -2,6 +2,7 @@ FROM rust as rust-builder
 
 WORKDIR /usr/src/
 RUN apt-get update && apt-get install -y musl-tools
+RUN cargo install sqlx-cli --no-default-features --features rustls,postgres
 RUN rustup target add x86_64-unknown-linux-musl
 
 RUN cargo new app
@@ -12,6 +13,7 @@ RUN rm src/main.rs
 
 COPY src src
 RUN cargo build --release --bin=main --package=server --target x86_64-unknown-linux-musl
+RUN sqlx migrate run
 
 FROM node:16 as dashboard-builder
 

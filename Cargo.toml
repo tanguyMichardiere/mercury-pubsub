@@ -4,17 +4,20 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-axum = { version = "0.5.14", features = ["ws"] }
+axum = { version = "0.5.14", features = ["headers", "ws"] }
+chrono = { version = "0.4.19", features = ["serde"] }
 dotenv = "0.15.0"
 figment = { version = "0.10.6", features = ["env"] }
-hyper = { version = "0.14.20", features = ["full"] }
+hyper = "0.14.20"
 serde = { version = "1.0.140", features = ["derive"] }
-sqlx = { version = "0.6.0", features = ["runtime-tokio-rustls", "postgres", "macros", "uuid", "migrate"] }
-tokio = { version = "1.20.1", features = ["full"] }
+serde_json = "1.0.82"
+sqlx = { version = "0.6.0", features = ["chrono", "macros", "postgres", "runtime-tokio-rustls", "uuid"] }
+tokio = { version = "1.20.1", features = ["macros", "rt-multi-thread"] }
 tower = "0.4.13"
-tower-http = { version = "0.3.4", features = ["trace", "fs"] }
+tower-http = { version = "0.3.4", features = ["fs", "trace"] }
 tracing = "0.1.35"
 tracing-subscriber = { version = "0.3.15", features = ["env-filter", "json"] }
+uuid = { version = "1.1.2", features = ["serde"] }
 
 [dev-dependencies]
 sqlx-database-tester = { version = "0.4.0", features = ["runtime-tokio"] }
