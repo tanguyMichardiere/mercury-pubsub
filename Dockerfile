@@ -1,6 +1,5 @@
-ARG DATABASE_URL
-
 FROM rust as rust-builder
+ARG DATABASE_URL
 
 WORKDIR /usr/src/
 RUN apt-get update && apt-get install -y musl-tools
