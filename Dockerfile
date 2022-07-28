@@ -8,11 +8,11 @@ RUN rustup target add x86_64-unknown-linux-musl
 RUN cargo new app
 WORKDIR /usr/src/app
 COPY Cargo.toml Cargo.lock ./
-RUN SQLX_OFFLINE=true cargo build --release
+RUN cargo build --release
 RUN rm src/main.rs
 
 COPY src src
-RUN cargo build --release --bin=main --package=server --target x86_64-unknown-linux-musl
+RUN SQLX_OFFLINE=true cargo build --release --bin=main --package=server --target x86_64-unknown-linux-musl
 RUN sqlx migrate run
 
 FROM node:16 as dashboard-builder
