@@ -1,0 +1,225 @@
+{
+  "db": "PostgreSQL",
+  "0ae3d8a3e6ac30f7f5ab124be8b4b662c71758b182802fcf0ca1d7ed6787f115": {
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Uuid"
+        },
+        {
+          "name": "name",
+          "ordinal": 1,
+          "type_info": "Text"
+        },
+        {
+          "name": "password_hash",
+          "ordinal": 2,
+          "type_info": "Text"
+        }
+      ],
+      "nullable": [
+        false,
+        false,
+        false
+      ],
+      "parameters": {
+        "Left": [
+          "Text",
+          "Text"
+        ]
+      }
+    },
+    "query": "\n            SELECT * FROM \"User\"\n                WHERE name = $1\n                    AND password_hash = crypt($2, password_hash)\n            "
+  },
+  "12f80ab74d38704a2e942a80a51725c483fc673e0ab68eeb33057ad5d86b652d": {
+    "describe": {
+      "columns": [
+        {
+          "name": "expires",
+          "ordinal": 0,
+          "type_info": "Timestamptz"
+        }
+      ],
+      "nullable": [
+        false
+      ],
+      "parameters": {
+        "Left": [
+          "Uuid"
+        ]
+      }
+    },
+    "query": "\n                UPDATE \"Session\"\n                    SET expires = CURRENT_TIMESTAMP + interval '1 day'\n                    WHERE id = $1\n                RETURNING expires\n                "
+  },
+  "455d7e3ae7cbbafdcec806450adf5490357f7d9739ba595088f566111b35fc98": {
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Uuid"
+        },
+        {
+          "name": "name",
+          "ordinal": 1,
+          "type_info": "Text"
+        },
+        {
+          "name": "password_hash",
+          "ordinal": 2,
+          "type_info": "Text"
+        }
+      ],
+      "nullable": [
+        false,
+        false,
+        false
+      ],
+      "parameters": {
+        "Left": [
+          "Text",
+          "Text"
+        ]
+      }
+    },
+    "query": "\n            INSERT INTO \"User\" (name, password_hash)\n                VALUES ($1, crypt($2, gen_salt('md5')))\n            RETURNING *\n            "
+  },
+  "62dcb728330e56872e9d355c80fccdfdc1842c629ab7938f10ba2eaa6edeb250": {
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Uuid"
+        },
+        {
+          "name": "name",
+          "ordinal": 1,
+          "type_info": "Text"
+        },
+        {
+          "name": "password_hash",
+          "ordinal": 2,
+          "type_info": "Text"
+        }
+      ],
+      "nullable": [
+        false,
+        false,
+        false
+      ],
+      "parameters": {
+        "Left": [
+          "Uuid"
+        ]
+      }
+    },
+    "query": "\n            SELECT * FROM \"User\"\n                WHERE id = $1\n            "
+  },
+  "9d3e76f7c7390ae5dd7715ffaae38a594d1308ef9f0ed5c492063f8778faeeec": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Left": []
+      }
+    },
+    "query": "\n            DELETE FROM \"Session\"\n                WHERE expires < CURRENT_TIMESTAMP\n            "
+  },
+  "d5d3a3f46f7cf1a9a6ab4bbd5df9dc1e75f5deddcf822ba1f2fb83169f4837ff": {
+    "describe": {
+      "columns": [
+        {
+          "name": "count",
+          "ordinal": 0,
+          "type_info": "Int8"
+        }
+      ],
+      "nullable": [
+        null
+      ],
+      "parameters": {
+        "Left": []
+      }
+    },
+    "query": "SELECT COUNT(*) FROM \"User\""
+  },
+  "ebee9a2c54046395ce8379092fd90e3ef254c3b84ed85346c2fd9fb3f66d3d28": {
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Uuid"
+        },
+        {
+          "name": "session_token",
+          "ordinal": 1,
+          "type_info": "Bpchar"
+        },
+        {
+          "name": "expires",
+          "ordinal": 2,
+          "type_info": "Timestamptz"
+        },
+        {
+          "name": "user_id",
+          "ordinal": 3,
+          "type_info": "Uuid"
+        }
+      ],
+      "nullable": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "parameters": {
+        "Left": [
+          "Bpchar"
+        ]
+      }
+    },
+    "query": "\n                SELECT * FROM \"Session\"\n                    WHERE \"Session\".session_token = $1\n                        AND expires > CURRENT_TIMESTAMP\n                "
+  },
+  "f92da82af7ff376d0f795a24e3659e595927b7fc986453620d74697873f706a3": {
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Uuid"
+        },
+        {
+          "name": "session_token",
+          "ordinal": 1,
+          "type_info": "Bpchar"
+        },
+        {
+          "name": "expires",
+          "ordinal": 2,
+          "type_info": "Timestamptz"
+        },
+        {
+          "name": "user_id",
+          "ordinal": 3,
+          "type_info": "Uuid"
+        }
+      ],
+      "nullable": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "parameters": {
+        "Left": [
+          "Uuid"
+        ]
+      }
+    },
+    "query": "\n            INSERT INTO \"Session\" (expires, user_id)\n                VALUES (CURRENT_TIMESTAMP + interval '1 day', $1)\n            RETURNING *\n            "
+  }
+}
