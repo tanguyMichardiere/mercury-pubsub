@@ -2,7 +2,7 @@ use serde::Serialize;
 use sqlx::PgPool;
 use uuid::Uuid;
 
-#[derive(Serialize)]
+#[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct User {
     pub id: Uuid,
@@ -31,10 +31,10 @@ impl User {
         sqlx::query_scalar!(r#"SELECT COUNT(*) FROM "User""#)
             .fetch_one(pool)
             .await
-            .map(|option| option.expect("NULL from COUNT"))
+            .map(|option| option.expect("NULL from SELECT COUNT"))
     }
 
-    pub async fn get(pool: &PgPool, id: Uuid) -> sqlx::Result<Self> {
+    pub async fn get(pool: &PgPool, id: Uuid) -> sqlx::Result<Option<Self>> {
         sqlx::query_as!(
             User,
             r#"
@@ -43,7 +43,7 @@ impl User {
             "#,
             id
         )
-        .fetch_one(pool)
+        .fetch_optional(pool)
         .await
     }
 
@@ -51,18 +51,30 @@ impl User {
         pool: &PgPool,
         name: &str,
         password: &str,
-    ) -> sqlx::Result<Self> {
-        sqlx::query_as!(
+    ) -> sqlx::Result<Option<Self>> {
+        match sqlx::query_as!(
             User,
             r#"
             SELECT * FROM "User"
                 WHERE name = $1
-                    AND password_hash = crypt($2, password_hash)
             "#,
-            name,
-            password
+            name
         )
-        .fetch_one(pool)
-        .await
+        .fetch_optional(pool)
+        .await?
+        {
+            Some(user) => {
+                if sqlx::query_scalar!(r#"SELECT $1 = crypt($2, $1)"#, user.password_hash, password)
+                    .fetch_one(pool)
+                    .await
+                    .map(|option| option.expect("NULL from SELECT scalar"))?
+                {
+                    Ok(Some(user))
+                } else {
+                    Ok(None)
+                }
+            }
+            None => Ok(None),
+        }
     }
 }

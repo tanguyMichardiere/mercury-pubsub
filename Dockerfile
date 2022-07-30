@@ -14,7 +14,7 @@ RUN rm src/main.rs
 
 COPY src src
 COPY sqlx-data.json .
-RUN SQLX_OFFLINE=true cargo build --release --bin=main --package=server --target x86_64-unknown-linux-musl
+RUN SQLX_OFFLINE=true cargo build --release --features=secure --bin=main --package=server --target x86_64-unknown-linux-musl
 COPY migrations migrations
 RUN sqlx migrate run
 

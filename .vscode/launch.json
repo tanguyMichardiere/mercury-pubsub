@@ -7,20 +7,6 @@
     {
       "type": "lldb",
       "request": "launch",
-      "name": "Debug unit tests in library 'server'",
-      "cargo": {
-        "args": ["test", "--no-run", "--lib", "--package=server"],
-        "filter": {
-          "name": "server",
-          "kind": "lib"
-        }
-      },
-      "args": [],
-      "cwd": "${workspaceFolder}"
-    },
-    {
-      "type": "lldb",
-      "request": "launch",
       "name": "Debug executable 'main'",
       "cargo": {
         "args": ["build", "--bin=main", "--package=server"],
@@ -35,12 +21,12 @@
     {
       "type": "lldb",
       "request": "launch",
-      "name": "Debug unit tests in executable 'main'",
+      "name": "Debug integration test 'auth'",
       "cargo": {
-        "args": ["test", "--no-run", "--bin=main", "--package=server"],
+        "args": ["test", "--no-run", "--test=auth", "--package=server"],
         "filter": {
-          "name": "main",
-          "kind": "bin"
+          "name": "auth",
+          "kind": "test"
         }
       },
       "args": [],

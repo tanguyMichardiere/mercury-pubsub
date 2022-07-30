@@ -1,63 +1,139 @@
-use crate::constants::SESSION_COOKIE_NAME;
+use crate::api::extractors::refresh_token::REFRESH_TOKEN_COOKIE_NAME;
 use crate::models::user::User;
+use axum::extract::{FromRequest, RequestParts, TypedHeader};
+use axum::headers::authorization::Bearer;
+use axum::headers::Authorization;
 use axum::response::{IntoResponse, Response};
 use axum::Json;
+use axum::{async_trait, Extension};
 use chrono::{DateTime, Utc};
+use hyper::StatusCode;
 use hyper::{header, HeaderMap};
 use serde::Serialize;
 use sqlx::postgres::PgQueryResult;
 use sqlx::PgPool;
+use tracing::{debug, error};
 use uuid::Uuid;
 
-#[derive(Serialize)]
+struct RawSession {
+    id: Uuid,
+    expires: DateTime<Utc>,
+    user_id: Uuid,
+}
+
+#[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Session {
+    #[serde(skip_serializing)]
     pub id: Uuid,
-    pub session_token: String,
+    /// Some if just created or refreshed, None otherwise
+    pub access_token: Option<String>,
+    /// Some if just created or refreshed, None otherwise
+    #[serde(skip_serializing)]
+    pub refresh_token: Option<String>,
     pub expires: DateTime<Utc>,
-    pub user_id: Uuid,
+    pub user: User,
 }
 
 impl Session {
-    pub async fn get(pool: &PgPool, session_token: &str) -> sqlx::Result<Self> {
-        sqlx::query_as!(
-            Self,
-            r#"
-                SELECT * FROM "Session"
-                    WHERE "Session".session_token = $1
-                        AND expires > CURRENT_TIMESTAMP
-                "#,
-            session_token
-        )
-        .fetch_one(pool)
-        .await
+    /// Generate 48 random bytes converted to base64 (64 characters) with Postgres
+    async fn gen_token(pool: &PgPool) -> sqlx::Result<String> {
+        sqlx::query_scalar!(r#"SELECT encode(gen_random_bytes(48), 'base64')"#)
+            .fetch_one(pool)
+            .await
+            .map(|option| option.expect("NULL from SELECT scalar"))
     }
 
-    pub async fn with_user(self, pool: &PgPool) -> sqlx::Result<SessionWithUser> {
-        Ok(SessionWithUser {
-            id: self.id,
-            session_token: self.session_token,
-            expires: self.expires,
-            user: User::get(pool, self.user_id).await?,
+    async fn from_raw_session(
+        raw_session: RawSession,
+        pool: &PgPool,
+        access_token: Option<&str>,
+        refresh_token: Option<&str>,
+    ) -> sqlx::Result<Self> {
+        Ok(Self {
+            id: raw_session.id,
+            access_token: access_token.map(|access_token| access_token.to_owned()),
+            refresh_token: refresh_token.map(|refresh_token| refresh_token.to_owned()),
+            expires: raw_session.expires,
+            user: User::get(pool, raw_session.user_id)
+                .await?
+                .expect("session without user"),
         })
     }
 
-    pub async fn extend(&mut self, pool: &PgPool) -> sqlx::Result<()> {
-        self.expires = sqlx::query_scalar!(
+    pub async fn new(pool: &PgPool, user: User) -> sqlx::Result<Self> {
+        let access_token = Self::gen_token(pool).await?;
+        let refresh_token = Self::gen_token(pool).await?;
+        let raw_session = sqlx::query_as!(
+            RawSession,
             r#"
-                UPDATE "Session"
-                    SET expires = CURRENT_TIMESTAMP + interval '1 day'
-                    WHERE id = $1
-                RETURNING expires
-                "#,
-            self.id
+            INSERT INTO "Session" (access_token_hash, refresh_token_hash, expires, user_id)
+                VALUES (crypt($1, gen_salt('md5')), crypt($2, gen_salt('md5')), CURRENT_TIMESTAMP + interval '1 day', $3)
+            RETURNING id, expires, user_id
+            "#,
+            access_token,
+            refresh_token,
+            user.id
         )
         .fetch_one(pool)
         .await?;
-        Ok(())
+        Ok(Self {
+            id: raw_session.id,
+            access_token: Some(access_token),
+            refresh_token: Some(refresh_token),
+            expires: raw_session.expires,
+            user,
+        })
     }
 
-    pub async fn clean_expired(pool: &PgPool) -> sqlx::Result<PgQueryResult> {
+    pub async fn get(pool: &PgPool, access_token: &str) -> sqlx::Result<Option<Self>> {
+        Self::delete_expired(pool).await?;
+        if let Some(raw_session) = sqlx::query_as!(
+            RawSession,
+            r#"
+            SELECT id, expires, user_id FROM "Session"
+                WHERE access_token_hash = crypt($1, access_token_hash)
+            "#,
+            access_token
+        )
+        .fetch_optional(pool)
+        .await?
+        {
+            Ok(Some(
+                Self::from_raw_session(raw_session, pool, None, None).await?,
+            ))
+        } else {
+            Ok(None)
+        }
+    }
+
+    pub async fn refresh(pool: &PgPool, refresh_token: &str) -> sqlx::Result<Option<Self>> {
+        Self::delete_expired(pool).await?;
+        let access_token = Self::gen_token(pool).await?;
+        match sqlx::query_as!(
+            RawSession,
+            r#"
+            UPDATE "Session"
+                SET access_token_hash = crypt($1, gen_salt('md5')),
+                    expires = CURRENT_TIMESTAMP + interval '1 day'
+                WHERE refresh_token_hash = crypt($2, refresh_token_hash)
+            RETURNING id, expires, user_id
+            "#,
+            access_token,
+            refresh_token
+        )
+        .fetch_optional(pool)
+        .await?
+        {
+            Some(raw_session) => Ok(Some(
+                Self::from_raw_session(raw_session, pool, Some(&access_token), Some(refresh_token))
+                    .await?,
+            )),
+            None => Ok(None),
+        }
+    }
+
+    pub async fn delete_expired(pool: &PgPool) -> sqlx::Result<PgQueryResult> {
         sqlx::query!(
             r#"
             DELETE FROM "Session"
@@ -69,51 +145,55 @@ impl Session {
     }
 }
 
-#[derive(Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct SessionWithUser {
-    pub id: Uuid,
-    #[serde(skip_serializing)]
-    pub session_token: String,
-    pub expires: DateTime<Utc>,
-    pub user: User,
-}
+#[async_trait]
+impl<B> FromRequest<B> for Session
+where
+    B: axum::body::HttpBody + Send,
+{
+    type Rejection = StatusCode;
 
-impl SessionWithUser {
-    pub async fn new(pool: &PgPool, user: User) -> sqlx::Result<Self> {
-        let session = sqlx::query_as!(
-            Session,
-            r#"
-            INSERT INTO "Session" (expires, user_id)
-                VALUES (CURRENT_TIMESTAMP + interval '1 day', $1)
-            RETURNING *
-            "#,
-            user.id
-        )
-        .fetch_one(pool)
-        .await?;
-        Ok(Self {
-            id: session.id,
-            session_token: session.session_token,
-            expires: session.expires,
-            user,
-        })
+    async fn from_request(req: &mut RequestParts<B>) -> Result<Self, Self::Rejection> {
+        match TypedHeader::<Authorization<Bearer>>::from_request(req).await {
+            Ok(header) => {
+                let access_token = header.token().to_owned();
+                let Extension(pool) = Extension::<PgPool>::from_request(req)
+                    .await
+                    .expect("pool extension missing");
+                match Session::get(&pool, &access_token).await {
+                    Ok(Some(session)) => Ok(session),
+                    Ok(None) => {
+                        debug!("no active Session for this access token");
+                        Err(StatusCode::UNAUTHORIZED)
+                    }
+                    Err(error) => {
+                        error!(?error);
+                        Err(StatusCode::BAD_GATEWAY)
+                    }
+                }
+            }
+            Err(error) => {
+                debug!(?error, "no Authorization header");
+                Err(StatusCode::UNAUTHORIZED)
+            }
+        }
     }
 }
 
-impl IntoResponse for SessionWithUser {
+impl IntoResponse for Session {
     fn into_response(self) -> Response {
         let mut headers = HeaderMap::new();
-        headers.insert(
-            header::SET_COOKIE,
-            format!(
-                "{SESSION_COOKIE_NAME}={}; Expires={}",
-                self.session_token,
-                self.expires.to_rfc2822()
-            )
-            .parse()
-            .unwrap(),
-        );
+        if let Some(refresh_token) = &self.refresh_token {
+            headers.insert(
+                header::SET_COOKIE,
+                format!(
+                    "{REFRESH_TOKEN_COOKIE_NAME}={}; Expires={}; SameSite=Strict; Secure; HttpOnly; Path=/",
+                    refresh_token,
+                    self.expires.to_rfc2822()
+                )
+                .parse()
+                .expect("wrong formatting"),
+            );
+        }
         (headers, Json(self)).into_response()
     }
 }

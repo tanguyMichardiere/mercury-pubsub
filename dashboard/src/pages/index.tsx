@@ -1,17 +1,32 @@
 import Head from "next/head";
+import { useRouter } from "next/router";
 
-import { useQuery } from "@tanstack/react-query";
-
+import Spinner from "../components/Spinner";
 import ThemeMenu from "../components/ThemeMenu";
 
-function useHelloQuery() {
-  return useQuery<string>(["/api/hello"], () =>
-    fetch("/api/hello").then((response) => response.text())
-  );
-}
+import { useLogOut, useSession } from "../hooks/auth";
 
 export default function Page(): JSX.Element {
-  const { data } = useHelloQuery();
+  const router = useRouter();
+  const session = useSession();
+  const logOut = useLogOut();
+
+  if (session === undefined) {
+    return (
+      <div className="flex h-full items-center justify-center">
+        <Spinner />
+      </div>
+    );
+  }
+
+  if (session === null) {
+    void router.push("/login");
+    return (
+      <div className="flex h-full items-center justify-center">
+        <Spinner />
+      </div>
+    );
+  }
 
   return (
     <>
@@ -23,7 +38,14 @@ export default function Page(): JSX.Element {
       </div>
       <div className="flex h-full flex-col items-center justify-center gap-4 p-4">
         <h1 className="text-5xl font-bold">Dashboard</h1>
-        <div>{data}</div>
+        <div>Authenticated as: {session.user.name}</div>
+        <button
+          className="inline-flex justify-center rounded-md border border-transparent bg-indigo-600 py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+          onClick={logOut}
+          type="button"
+        >
+          Log out
+        </button>
       </div>
     </>
   );

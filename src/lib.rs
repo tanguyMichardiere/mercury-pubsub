@@ -1,12 +1,12 @@
 pub mod api;
 pub mod config;
-pub mod constants;
 pub mod models;
 
 use axum::routing::{get_service, MethodRouter};
 use axum::Router;
 use hyper::StatusCode;
-use sqlx::{postgres::PgPoolOptions, PgPool};
+use sqlx::postgres::PgPoolOptions;
+use sqlx::PgPool;
 use std::io;
 use tower_http::services::{ServeDir, ServeFile};
 use tower_http::trace::TraceLayer;

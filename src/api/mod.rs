@@ -1,4 +1,5 @@
 pub mod auth;
+pub mod error_handlers;
 pub mod extractors;
 
 use axum::{Extension, Router};
