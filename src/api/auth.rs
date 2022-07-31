@@ -10,6 +10,7 @@ use serde::Deserialize;
 use serde_json::Value;
 use sqlx::PgPool;
 use tracing::{debug, instrument};
+use validator::Validate;
 
 pub fn app() -> Router {
     Router::new()
@@ -30,10 +31,12 @@ async fn session(
     session.ok_or(Json(Value::Null))
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Validate)]
 #[serde(rename_all = "camelCase")]
 struct LoginBody {
+    #[validate(length(min = 4, max = 16))]
     name: String,
+    #[validate(length(min = 8))]
     password: String,
 }
 
@@ -92,10 +95,12 @@ async fn logout(Extension(pool): Extension<PgPool>, refresh_token: RefreshToken)
     headers
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Validate)]
 #[serde(rename_all = "camelCase")]
 struct CreateUserBody {
+    #[validate(length(min = 4, max = 16))]
     name: String,
+    #[validate(length(min = 8))]
     password: String,
 }
 
