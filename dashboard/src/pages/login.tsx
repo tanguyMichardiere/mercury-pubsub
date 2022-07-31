@@ -33,7 +33,7 @@ export default function Page(): JSX.Element {
   useEffect(
     function () {
       if (isFirstSignin.data === true) {
-        void router.push("/signin");
+        void router.push("/create-user");
       }
     },
     [isFirstSignin.data, router]
