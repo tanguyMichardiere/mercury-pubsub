@@ -2,6 +2,7 @@ use serde::Serialize;
 use sqlx::PgPool;
 use uuid::Uuid;
 
+/// An application user.
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct User {
@@ -12,6 +13,7 @@ pub struct User {
 }
 
 impl User {
+    /// Create a new user.
     pub async fn new(pool: &PgPool, name: &str, password: &str) -> sqlx::Result<Self> {
         sqlx::query_as!(
             User,
@@ -27,6 +29,7 @@ impl User {
         .await
     }
 
+    /// Get the number of existing users.
     pub async fn count(pool: &PgPool) -> sqlx::Result<i64> {
         sqlx::query_scalar!(r#"SELECT COUNT(*) FROM "User""#)
             .fetch_one(pool)
@@ -34,6 +37,7 @@ impl User {
             .map(|option| option.expect("NULL from SELECT COUNT"))
     }
 
+    /// Get a user with an ID.
     pub async fn get(pool: &PgPool, id: Uuid) -> sqlx::Result<Option<Self>> {
         sqlx::query_as!(
             User,
@@ -47,6 +51,10 @@ impl User {
         .await
     }
 
+    /// Get a user with a name and password.
+    ///
+    /// A None result can mean no user exists with this name, or a user exists but the wrong
+    /// password was provided.
     pub async fn get_by_name_and_password(
         pool: &PgPool,
         name: &str,
@@ -64,6 +72,7 @@ impl User {
         .await?
         {
             Some(user) => {
+                // check if the password is correct
                 if sqlx::query_scalar!(r#"SELECT $1 = crypt($2, $1)"#, user.password_hash, password)
                     .fetch_one(pool)
                     .await

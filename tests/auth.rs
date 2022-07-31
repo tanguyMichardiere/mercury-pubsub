@@ -57,7 +57,7 @@ async fn get_session(app: &mut Router, access_token: &str) -> Response {
         .await
         .unwrap()
         .call(
-            Request::get("/api/auth")
+            Request::get("/api/auth/session")
                 .header("Authorization", format!("Bearer {access_token}"))
                 .body(Body::empty())
                 .unwrap(),

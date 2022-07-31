@@ -11,6 +11,7 @@ pub struct Config {
 
 pub fn config() -> figment::error::Result<Config> {
     Figment::from(Serialized::defaults(Config::default()))
+        // get the port env var as PORT or MERCURY_PORT
         .merge(Env::raw().only(&["port"]))
         .merge(Env::prefixed("MERCURY_"))
         .extract()

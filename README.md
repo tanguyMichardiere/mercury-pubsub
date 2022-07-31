@@ -2,7 +2,7 @@
 
 ## Deployment
 
-[![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/new/template?template=https://github.com/mercury-pubsub/server&plugins=postgresql)
+[![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/new/template/9DL2RK?referralCode=bUNzLh)
 
 ## Configuration
 

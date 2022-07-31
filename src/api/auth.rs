@@ -42,7 +42,7 @@ struct LoginBody {
 async fn login(
     Extension(pool): Extension<PgPool>,
     Json(body): Json<LoginBody>,
-) -> Result<Session, StatusCode> {
+) -> Result<Session, (StatusCode, &'static str)> {
     match User::get_by_name_and_password(&pool, &body.name, &body.password)
         .await
         .map_err(handle_database_error)?
@@ -52,7 +52,10 @@ async fn login(
             .map_err(handle_database_error),
         None => {
             debug!("no user found with this name and password");
-            Err(StatusCode::NOT_FOUND)
+            Err((
+                StatusCode::NOT_FOUND,
+                "No user found with this name and password",
+            ))
         }
     }
 }
@@ -63,15 +66,20 @@ async fn login(
 async fn refresh_session(
     Extension(pool): Extension<PgPool>,
     refresh_token: RefreshToken,
-) -> Result<Session, StatusCode> {
+) -> Result<Session, (StatusCode, &'static str)> {
     Session::refresh(&pool, &refresh_token)
         .await
         .map_err(handle_database_error)?
-        .ok_or(StatusCode::NOT_FOUND)
+        .ok_or((
+            StatusCode::NOT_FOUND,
+            "No session found with this refresh token",
+        ))
 }
 
-/// Log the user out
-async fn logout() -> HeaderMap {
+/// Log the user out.
+async fn logout(Extension(pool): Extension<PgPool>, refresh_token: RefreshToken) -> HeaderMap {
+    // don't interrupt in case the session could't be deleted
+    Session::delete(&pool, &refresh_token).await.ok();
     let mut headers = HeaderMap::new();
     headers.insert(
         header::SET_COOKIE,
@@ -91,43 +99,47 @@ struct CreateUserBody {
     password: String,
 }
 
-/// Create a user
+/// Create a user.
 ///
-/// If there are no users yet, this doesn't require authentication and logs the new user in
+/// If there are no users yet, this doesn't require authentication and logs the new user in.
 #[instrument]
 async fn create_user(
     Extension(pool): Extension<PgPool>,
     session: Option<Session>,
     Json(body): Json<CreateUserBody>,
-) -> Result<Session, StatusCode> {
-    match User::count(&pool).await.map_err(handle_database_error)? {
+) -> Result<Session, (StatusCode, &'static str)> {
+    if User::count(&pool).await.map_err(handle_database_error)? == 0 {
         // no user yet
-        0 => {
-            let user = User::new(&pool, &body.name, &body.password)
+        Session::new(
+            &pool,
+            User::new(&pool, &body.name, &body.password)
+                .await
+                .map_err(handle_database_error)?,
+        )
+        .await
+        .map_err(handle_database_error)
+    } else {
+        // there are users already, only allow authenticated users to create more
+        if session.is_some() {
+            User::new(&pool, &body.name, &body.password)
                 .await
                 .map_err(handle_database_error)?;
-            Session::new(&pool, user)
-                .await
-                .map_err(handle_database_error)
-        }
-        // there already exist users, only allow logged users to create more
-        _ => {
-            if session.is_some() {
-                User::new(&pool, &body.name, &body.password)
-                    .await
-                    .map_err(handle_database_error)?;
-                Err(StatusCode::CREATED)
-            } else {
-                debug!("must be authenticated to create a user");
-                Err(StatusCode::UNAUTHORIZED)
-            }
+            Err((StatusCode::CREATED, "New user created successfully"))
+        } else {
+            debug!("must be authenticated to create a user");
+            Err((
+                StatusCode::UNAUTHORIZED,
+                "Must be authenticated to create a user",
+            ))
         }
     }
 }
 
 /// Get the number of existing users.
 #[instrument]
-async fn user_count(Extension(pool): Extension<PgPool>) -> Result<String, StatusCode> {
+async fn user_count(
+    Extension(pool): Extension<PgPool>,
+) -> Result<String, (StatusCode, &'static str)> {
     User::count(&pool)
         .await
         .map(|count| format!("{}", count))

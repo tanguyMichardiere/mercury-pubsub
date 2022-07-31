@@ -3,7 +3,6 @@ use axum::extract::{FromRequest, RequestParts, TypedHeader};
 use axum::headers::Cookie;
 use hyper::StatusCode;
 use std::ops::Deref;
-use tracing::debug;
 
 #[cfg(not(feature = "secure"))]
 pub const REFRESH_TOKEN_COOKIE_NAME: &'static str = "refreshToken";
@@ -27,24 +26,19 @@ impl<B> FromRequest<B> for RefreshToken
 where
     B: axum::body::HttpBody + Send,
 {
-    type Rejection = (StatusCode, String);
+    type Rejection = (StatusCode, &'static str);
 
     async fn from_request(req: &mut RequestParts<B>) -> Result<Self, Self::Rejection> {
-        match TypedHeader::<Cookie>::from_request(req).await {
-            Ok(cookie_header) => match cookie_header.get(REFRESH_TOKEN_COOKIE_NAME) {
-                Some(refresh_token) => Ok(Self(refresh_token.to_owned())),
-                None => {
-                    debug!("no refresh token in Cookie header");
-                    Err((
-                        StatusCode::UNAUTHORIZED,
-                        "No refresh token in Cookie header".to_owned(),
-                    ))
-                }
-            },
-            Err(error) => {
-                debug!(?error, "no Cookie header");
-                Err((StatusCode::UNAUTHORIZED, "No Cookie header".to_owned()))
-            }
-        }
+        Ok(Self(
+            TypedHeader::<Cookie>::from_request(req)
+                .await
+                .map_err(|_| (StatusCode::UNAUTHORIZED, "Missing Cookie header"))?
+                .get(REFRESH_TOKEN_COOKIE_NAME)
+                .ok_or((
+                    StatusCode::UNAUTHORIZED,
+                    "Missing refresh token in Cookie header",
+                ))?
+                .to_owned(),
+        ))
     }
 }
