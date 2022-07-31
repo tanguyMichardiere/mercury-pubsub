@@ -80,6 +80,7 @@ async fn refresh_session(
 }
 
 /// Log the user out.
+#[instrument]
 async fn logout(Extension(pool): Extension<PgPool>, refresh_token: RefreshToken) -> HeaderMap {
     // don't interrupt in case the session could't be deleted
     Session::delete(&pool, &refresh_token).await.ok();
