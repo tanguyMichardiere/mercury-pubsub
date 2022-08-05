@@ -67,6 +67,50 @@
     },
     "query": "\n            UPDATE \"Session\"\n                SET access_token_hash = crypt($1, gen_salt('md5')),\n                    expires = CURRENT_TIMESTAMP + interval '1 day'\n                WHERE refresh_token_hash = crypt($2, refresh_token_hash)\n            RETURNING id, expires, user_id\n            "
   },
+  "2c0e4305a9f4cfea95b6e96867b1ee08703352fd9665f382e7a0e9b4f9fe0360": {
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Uuid"
+        },
+        {
+          "name": "name",
+          "ordinal": 1,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "schema",
+          "ordinal": 2,
+          "type_info": "Jsonb"
+        }
+      ],
+      "nullable": [
+        false,
+        false,
+        false
+      ],
+      "parameters": {
+        "Left": [
+          "Text"
+        ]
+      }
+    },
+    "query": "\n                SELECT * FROM \"Channel\"\n                    WHERE name = $1\n                "
+  },
+  "374a89ca323b2002887f524baff0872e4256e7a27e30c543a5de5fcc0d11873d": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Left": [
+          "Text"
+        ]
+      }
+    },
+    "query": "\n            DELETE FROM \"Session\"\n                WHERE refresh_token_hash = crypt($1, refresh_token_hash)\n            "
+  },
   "455d7e3ae7cbbafdcec806450adf5490357f7d9739ba595088f566111b35fc98": {
     "describe": {
       "columns": [
@@ -78,12 +122,12 @@
         {
           "name": "name",
           "ordinal": 1,
-          "type_info": "Text"
+          "type_info": "Varchar"
         },
         {
           "name": "password_hash",
           "ordinal": 2,
-          "type_info": "Text"
+          "type_info": "Bpchar"
         }
       ],
       "nullable": [
@@ -93,7 +137,7 @@
       ],
       "parameters": {
         "Left": [
-          "Text",
+          "Varchar",
           "Text"
         ]
       }
@@ -111,12 +155,12 @@
         {
           "name": "name",
           "ordinal": 1,
-          "type_info": "Text"
+          "type_info": "Varchar"
         },
         {
           "name": "password_hash",
           "ordinal": 2,
-          "type_info": "Text"
+          "type_info": "Bpchar"
         }
       ],
       "nullable": [
@@ -164,6 +208,36 @@
     },
     "query": "\n            SELECT id, expires, user_id FROM \"Session\"\n                WHERE access_token_hash = crypt($1, access_token_hash)\n            "
   },
+  "941a168ec978eecaea4486053fab975f068493e2a492ddf99b099e34a6e1bdc3": {
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Uuid"
+        },
+        {
+          "name": "name",
+          "ordinal": 1,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "schema",
+          "ordinal": 2,
+          "type_info": "Jsonb"
+        }
+      ],
+      "nullable": [
+        false,
+        false,
+        false
+      ],
+      "parameters": {
+        "Left": []
+      }
+    },
+    "query": "SELECT * FROM \"Channel\""
+  },
   "9ac323628b9e731058b1c0878a0980f010f3d8a92a4ef40f821738e1963e6305": {
     "describe": {
       "columns": [
@@ -175,12 +249,12 @@
         {
           "name": "name",
           "ordinal": 1,
-          "type_info": "Text"
+          "type_info": "Varchar"
         },
         {
           "name": "password_hash",
           "ordinal": 2,
-          "type_info": "Text"
+          "type_info": "Bpchar"
         }
       ],
       "nullable": [
@@ -205,6 +279,39 @@
       }
     },
     "query": "\n            DELETE FROM \"Session\"\n                WHERE expires < CURRENT_TIMESTAMP\n            "
+  },
+  "b40f44d8eb8b4d2dda991e18ce8894f17826ab20657064529cadef694c3e75e3": {
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Uuid"
+        },
+        {
+          "name": "name",
+          "ordinal": 1,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "schema",
+          "ordinal": 2,
+          "type_info": "Jsonb"
+        }
+      ],
+      "nullable": [
+        false,
+        false,
+        false
+      ],
+      "parameters": {
+        "Left": [
+          "Varchar",
+          "Jsonb"
+        ]
+      }
+    },
+    "query": "\n                INSERT INTO \"Channel\" (name, schema)\n                    VALUES ($1, $2)\n                RETURNING *\n                "
   },
   "d5d3a3f46f7cf1a9a6ab4bbd5df9dc1e75f5deddcf822ba1f2fb83169f4837ff": {
     "describe": {
