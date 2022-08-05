@@ -2,17 +2,19 @@ use axum::http::Request;
 use axum::response::Response;
 use axum::Router;
 use chrono::DateTime;
-use hyper::{Body, StatusCode};
+use hyper::{header, Body, StatusCode};
 use serde_json::{from_str, json, to_string, Value};
-use server::api::extractors::refresh_token::REFRESH_TOKEN_COOKIE_NAME;
 use server::app;
+use sqlx::PgPool;
 use std::str;
 use tower::{Service, ServiceExt};
+
+const REFRESH_TOKEN_COOKIE_NAME: &'static str = "refreshToken";
 
 fn get_refresh_token(response: &Response) -> &str {
     &response
         .headers()
-        .get_all("Set-Cookie")
+        .get_all(header::SET_COOKIE)
         .iter()
         .find(|header_value| {
             // find the header with the right cookie name
@@ -40,7 +42,7 @@ async fn create_user(app: &mut Router, name: &str, password: &str) -> Response {
         .unwrap()
         .call(
             Request::post("/api/auth/create-user")
-                .header("Content-Type", "application/json")
+                .header(header::CONTENT_TYPE, "application/json")
                 .body(
                     to_string(&json!({"name": name, "password": password}))
                         .unwrap()
@@ -83,8 +85,8 @@ async fn refresh_session(app: &mut Router, refresh_token: &str) -> Response {
         .unwrap()
 }
 
-#[sqlx_database_tester::test(pool(variable = "pool"))]
-async fn first_signin() {
+#[sqlx::test]
+async fn first_signin(pool: PgPool) {
     let mut app = app(pool);
     let response = create_user(&mut app, "admin", "password").await;
     assert_eq!(response.status(), StatusCode::OK);
@@ -93,8 +95,8 @@ async fn first_signin() {
     assert_eq!(access_token.len(), 64);
 }
 
-#[sqlx_database_tester::test(pool(variable = "pool"))]
-async fn signin_then_get_session() {
+#[sqlx::test]
+async fn signin_then_get_session(pool: PgPool) {
     let mut app = app(pool);
     let signin_response = create_user(&mut app, "admin", "password").await;
     assert_eq!(signin_response.status(), StatusCode::OK);
@@ -110,8 +112,8 @@ async fn signin_then_get_session() {
     assert_eq!(get_session_body["user"], signin_body["user"]);
 }
 
-#[sqlx_database_tester::test(pool(variable = "pool"))]
-async fn signin_then_refresh_session() {
+#[sqlx::test]
+async fn signin_then_refresh_session(pool: PgPool) {
     let mut app = app(pool);
     let signin_response = create_user(&mut app, "admin", "password").await;
     assert_eq!(signin_response.status(), StatusCode::OK);

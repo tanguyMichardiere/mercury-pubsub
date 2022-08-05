@@ -1,12 +1,11 @@
 pub mod auth;
-pub mod error_handlers;
-pub mod extractors;
+pub mod channels;
+pub mod extract;
 
-use axum::{Extension, Router};
-use sqlx::PgPool;
+use axum::Router;
 
-pub fn app(pool: PgPool) -> Router {
+pub fn app() -> Router {
     Router::new()
         .nest("/auth", auth::app())
-        .layer(Extension(pool))
+        .nest("/channels", channels::app())
 }
