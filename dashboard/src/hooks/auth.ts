@@ -14,7 +14,7 @@ type SessionStore = {
   logOut: () => Promise<void>;
 };
 
-const useSessionStore = create<SessionStore>((set) => ({
+export const useSessionStore = create<SessionStore>((set) => ({
   session: undefined,
   setSession(session) {
     set({ session });
@@ -34,7 +34,7 @@ const useSessionStore = create<SessionStore>((set) => ({
   },
 }));
 
-function throwOnErrorCode(response: Response): Response {
+export function throwOnErrorCode(response: Response): Response {
   if (!response.ok) throw new Error(response.status.toString());
   return response;
 }
@@ -65,10 +65,11 @@ export function useSession(): Session | null | undefined {
   return session;
 }
 
-type LoginOptions = {
-  name: string;
-  password: string;
-};
+export const LoginOptions = z.object({
+  name: z.string().min(4).max(16),
+  password: z.string().min(8),
+});
+export type LoginOptions = z.infer<typeof LoginOptions>;
 
 export function useLogin(): UseMutationResult<Session, unknown, LoginOptions> {
   const setSession = useSessionStore((state) => state.setSession);
@@ -78,9 +79,7 @@ export function useLogin(): UseMutationResult<Session, unknown, LoginOptions> {
     ({ name, password }) =>
       fetch("/api/auth/login", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name, password }),
       })
         .then(throwOnErrorCode)
@@ -97,10 +96,11 @@ export function useLogOut(): () => Promise<void> {
   return useSessionStore((state) => state.logOut);
 }
 
-type CreateUserOptions = {
-  name: string;
-  password: string;
-};
+export const CreateUserOptions = z.object({
+  name: z.string().min(4).max(16),
+  password: z.string().min(8),
+});
+export type CreateUserOptions = z.infer<typeof CreateUserOptions>;
 
 export function useCreateUser(): UseMutationResult<Session | null, unknown, CreateUserOptions> {
   const { session, setSession } = useSessionStore();

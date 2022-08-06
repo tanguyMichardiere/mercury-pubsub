@@ -6,15 +6,8 @@ import { useRouter } from "next/router";
 import { useFloating } from "@floating-ui/react-dom";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
-import { z } from "zod";
 
-import { useCreateUser, useIsFirstSignin, useSession } from "../hooks/auth";
-
-const Schema = z.object({
-  name: z.string().min(4),
-  password: z.string().min(8),
-});
-type Schema = z.infer<typeof Schema>;
+import { CreateUserOptions, useCreateUser, useIsFirstSignin, useSession } from "../hooks/auth";
 
 export default function Page(): JSX.Element {
   const router = useRouter();
@@ -34,14 +27,14 @@ export default function Page(): JSX.Element {
     register,
     handleSubmit,
     formState: { errors },
-  } = useForm<Schema>({
-    resolver: zodResolver(Schema),
+  } = useForm<CreateUserOptions>({
+    resolver: zodResolver(CreateUserOptions),
   });
 
   const createUser = useCreateUser();
 
   const onSubmit = useCallback(
-    function (data: Schema) {
+    function (data: CreateUserOptions) {
       void createUser.mutateAsync(data).then(function (session) {
         if (session !== null) {
           void router.push("/");
