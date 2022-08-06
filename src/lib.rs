@@ -28,7 +28,7 @@ pub async fn pool(database_url: &str) -> Result<PgPool, sqlx::Error> {
 }
 
 pub fn static_dir_service() -> MethodRouter {
-    get_service(ServeDir::new("static").fallback(ServeFile::new("static/404.html")))
+    get_service(ServeDir::new("static").fallback(ServeFile::new("static/index.html")))
         .handle_error(handle_io_error)
 }
 
