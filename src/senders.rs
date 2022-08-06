@@ -13,11 +13,11 @@ impl Senders {
     }
 
     pub fn get(&mut self, channel: &Channel) -> broadcast::Sender<Value> {
-        match self.0.get(&channel.id) {
+        match self.0.get(&channel.get_id()) {
             Some(sender) => sender.clone(),
             None => {
                 let (sender, _) = broadcast::channel(16);
-                self.0.insert(channel.id, sender.clone());
+                self.0.insert(channel.get_id(), sender.clone());
                 sender
             }
         }

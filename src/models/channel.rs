@@ -13,7 +13,7 @@ pub struct RawChannel {
 
 #[derive(Serialize)]
 pub struct Channel {
-    pub id: Uuid,
+    id: Uuid,
     name: String,
     schema: Value,
     #[serde(skip_serializing)]
@@ -21,6 +21,10 @@ pub struct Channel {
 }
 
 impl Channel {
+    pub fn get_id(&self) -> Uuid {
+        self.id
+    }
+
     fn from_raw_channel(raw_channel: RawChannel) -> Self {
         Self {
             id: raw_channel.id,
