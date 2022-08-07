@@ -1,4 +1,4 @@
-use dotenv::dotenv;
+use dotenvy::dotenv;
 use server::config::{config, LogFormat};
 use server::{app, pool};
 use std::env;

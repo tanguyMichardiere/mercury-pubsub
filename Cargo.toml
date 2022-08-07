@@ -14,7 +14,7 @@ codegen-units = 1
 [dependencies]
 axum = { version = "0.5.13", features = ["headers", "http2"] }
 chrono = { version = "0.4.19", features = ["serde"] }
-dotenv = "0.15.0"
+dotenvy = "0.15.1"
 figment = { version = "0.10.6", features = ["env"] }
 futures = "0.3.21"
 hyper = "0.14.20"

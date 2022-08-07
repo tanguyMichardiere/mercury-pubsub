@@ -1,3 +1,4 @@
+use crate::models::key::Key;
 use error::{Error, Result};
 use jsonschema::{ErrorIterator, JSONSchema};
 use serde::Serialize;
@@ -76,6 +77,24 @@ impl Channel {
             .into_iter()
             .map(Self::from_raw_channel)
             .collect())
+    }
+
+    pub async fn get_from_key(pool: &PgPool, key: &Key) -> Result<Vec<Self>> {
+        Ok(sqlx::query_as!(
+            RawChannel,
+            r#"
+            SELECT id, name, schema FROM "Channel"
+                JOIN "Access"
+                    ON "Channel".id = "Access".channel_id
+                WHERE key_id = $1
+            "#,
+            key.get_id()
+        )
+        .fetch_all(pool)
+        .await?
+        .into_iter()
+        .map(Self::from_raw_channel)
+        .collect())
     }
 
     pub fn is_valid(&self, instance: &Value) -> bool {
