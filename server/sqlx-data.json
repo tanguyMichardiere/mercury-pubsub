@@ -67,6 +67,38 @@
     },
     "query": "\n            UPDATE \"Session\"\n                SET access_token_hash = crypt($1, gen_salt('md5')),\n                    expires = CURRENT_TIMESTAMP + interval '1 day'\n                WHERE refresh_token_hash = crypt($2, refresh_token_hash)\n            RETURNING id, expires, user_id\n            "
   },
+  "16bd069d7623e8f709ace3b8058586180bcda1f9be01a328c178c7f6d1f1cc0b": {
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Uuid"
+        },
+        {
+          "name": "name",
+          "ordinal": 1,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "schema",
+          "ordinal": 2,
+          "type_info": "Jsonb"
+        }
+      ],
+      "nullable": [
+        false,
+        false,
+        false
+      ],
+      "parameters": {
+        "Left": [
+          "Uuid"
+        ]
+      }
+    },
+    "query": "\n            SELECT id, name, schema FROM \"Channel\"\n                JOIN \"Access\"\n                    ON \"Channel\".id = \"Access\".channel_id\n                WHERE key_id = $1\n            "
+  },
   "2c0e4305a9f4cfea95b6e96867b1ee08703352fd9665f382e7a0e9b4f9fe0360": {
     "describe": {
       "columns": [
@@ -144,6 +176,46 @@
     },
     "query": "\n            INSERT INTO \"User\" (name, password_hash)\n                VALUES ($1, crypt($2, gen_salt('md5')))\n            RETURNING *\n            "
   },
+  "60d56c76ad4c04ea1f5f570456d0bf881aa5bd1d42bafacfbeed52ef58a82a4e": {
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Uuid"
+        },
+        {
+          "name": "type: _",
+          "ordinal": 1,
+          "type_info": {
+            "Custom": {
+              "kind": {
+                "Enum": [
+                  "publisher",
+                  "subscriber"
+                ]
+              },
+              "name": "keytype"
+            }
+          }
+        },
+        {
+          "name": "hash",
+          "ordinal": 2,
+          "type_info": "Bpchar"
+        }
+      ],
+      "nullable": [
+        false,
+        false,
+        false
+      ],
+      "parameters": {
+        "Left": []
+      }
+    },
+    "query": "SELECT id, type as \"type: _\", hash FROM \"Key\""
+  },
   "62dcb728330e56872e9d355c80fccdfdc1842c629ab7938f10ba2eaa6edeb250": {
     "describe": {
       "columns": [
@@ -175,6 +247,60 @@
       }
     },
     "query": "\n            SELECT * FROM \"User\"\n                WHERE id = $1\n            "
+  },
+  "7538721029e5f3af1942c065c171fc0dc82fdf976f875118a91d534f320e6b6c": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Left": [
+          "Uuid"
+        ]
+      }
+    },
+    "query": "\n            DELETE FROM \"Access\"\n                WHERE key_id = $1\n            "
+  },
+  "7c7f076b1ed196df9280e856465a6aeff4bd33137346452209cc3e7a0da550bc": {
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Uuid"
+        },
+        {
+          "name": "type: _",
+          "ordinal": 1,
+          "type_info": {
+            "Custom": {
+              "kind": {
+                "Enum": [
+                  "publisher",
+                  "subscriber"
+                ]
+              },
+              "name": "keytype"
+            }
+          }
+        },
+        {
+          "name": "hash",
+          "ordinal": 2,
+          "type_info": "Bpchar"
+        }
+      ],
+      "nullable": [
+        false,
+        false,
+        false
+      ],
+      "parameters": {
+        "Left": [
+          "Uuid"
+        ]
+      }
+    },
+    "query": "\n            DELETE FROM \"Key\"\n                WHERE id = $1\n            RETURNING id, type as \"type: _\", hash\n            "
   },
   "8329a30c862bfb6c14743d1cde073c5c58cf7c583430c479b90580d6653d1136": {
     "describe": {
@@ -369,5 +495,121 @@
       }
     },
     "query": "SELECT $1 = crypt($2, $1)"
+  },
+  "e5016b3e229043ff2550345e3c9fb4dbea0211ba4079b44295497ab9269b8e29": {
+    "describe": {
+      "columns": [
+        {
+          "name": "count",
+          "ordinal": 0,
+          "type_info": "Int8"
+        }
+      ],
+      "nullable": [
+        null
+      ],
+      "parameters": {
+        "Left": [
+          "Uuid",
+          "Uuid"
+        ]
+      }
+    },
+    "query": "\n            SELECT COUNT(*) FROM \"Access\"\n                WHERE key_id = $1 AND channel_id = $2\n            "
+  },
+  "f00076a623702b253280b414a15bddba4de6af4c6e8db48dc842f9d48748da5a": {
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Uuid"
+        },
+        {
+          "name": "type: _",
+          "ordinal": 1,
+          "type_info": {
+            "Custom": {
+              "kind": {
+                "Enum": [
+                  "publisher",
+                  "subscriber"
+                ]
+              },
+              "name": "keytype"
+            }
+          }
+        },
+        {
+          "name": "hash",
+          "ordinal": 2,
+          "type_info": "Bpchar"
+        }
+      ],
+      "nullable": [
+        false,
+        false,
+        false
+      ],
+      "parameters": {
+        "Left": [
+          {
+            "Custom": {
+              "kind": {
+                "Enum": [
+                  "publisher",
+                  "subscriber"
+                ]
+              },
+              "name": "keytype"
+            }
+          },
+          "Text"
+        ]
+      }
+    },
+    "query": "\n            INSERT INTO \"Key\" (type, hash)\n                VALUES ($1, crypt($2, gen_salt('md5')))\n            RETURNING id, type as \"type: _\", hash\n            "
+  },
+  "f127b260db331f159cc4c425bacca8b73916564ef6fb336a3e5e865d47924d8c": {
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Uuid"
+        },
+        {
+          "name": "type: _",
+          "ordinal": 1,
+          "type_info": {
+            "Custom": {
+              "kind": {
+                "Enum": [
+                  "publisher",
+                  "subscriber"
+                ]
+              },
+              "name": "keytype"
+            }
+          }
+        },
+        {
+          "name": "hash",
+          "ordinal": 2,
+          "type_info": "Bpchar"
+        }
+      ],
+      "nullable": [
+        false,
+        false,
+        false
+      ],
+      "parameters": {
+        "Left": [
+          "Uuid"
+        ]
+      }
+    },
+    "query": "\n            SELECT id, type as \"type: _\", hash FROM \"Key\"\n                WHERE id = $1\n            "
   }
 }
