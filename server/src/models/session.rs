@@ -7,7 +7,6 @@ use chrono::{DateTime, Utc};
 use error::{Error, Result};
 use serde::Serialize;
 use sqlx::PgPool;
-use std::ops::Deref;
 use uuid::Uuid;
 
 /// A session as they are stored in the database.
@@ -56,8 +55,8 @@ impl Session {
                 VALUES (crypt($1, gen_salt('md5')), crypt($2, gen_salt('md5')), CURRENT_TIMESTAMP + interval '1 day', $3)
             RETURNING id, expires, user_id
             "#,
-            access_token.deref(),
-            refresh_token.deref(),
+            access_token.as_ref(),
+            refresh_token.as_ref(),
             user.id
         )
         .fetch_one(pool)
@@ -84,7 +83,7 @@ impl Session {
             SELECT id, expires, user_id FROM "Session"
                 WHERE access_token_hash = crypt($1, access_token_hash)
             "#,
-            access_token.deref()
+            access_token.as_ref()
         )
         .fetch_optional(pool)
         .await?
@@ -109,8 +108,8 @@ impl Session {
                 WHERE refresh_token_hash = crypt($2, refresh_token_hash)
             RETURNING id, expires, user_id
             "#,
-            access_token.deref(),
-            refresh_token.deref()
+            access_token.as_ref(),
+            refresh_token.as_ref()
         )
         .fetch_optional(pool)
         .await?
@@ -128,7 +127,7 @@ impl Session {
             DELETE FROM "Session"
                 WHERE refresh_token_hash = crypt($1, refresh_token_hash)
             "#,
-            refresh_token.deref()
+            refresh_token.as_ref()
         )
         .execute(pool)
         .await?

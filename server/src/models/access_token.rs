@@ -6,7 +6,6 @@ use axum::{async_trait, TypedHeader};
 use error::Result;
 use serde::Serialize;
 use sqlx::PgPool;
-use std::ops::Deref;
 
 #[derive(Debug, Serialize)]
 pub struct AccessToken(String);
@@ -22,10 +21,8 @@ impl AccessToken {
     }
 }
 
-impl Deref for AccessToken {
-    type Target = str;
-
-    fn deref(&self) -> &Self::Target {
+impl AsRef<str> for AccessToken {
+    fn as_ref(&self) -> &str {
         &self.0
     }
 }

@@ -6,7 +6,6 @@ use axum::{async_trait, Extension, TypedHeader};
 use error::{Error, Result};
 use serde::{Deserialize, Serialize};
 use sqlx::{PgPool, Postgres, QueryBuilder};
-use std::ops::Deref;
 use uuid::Uuid;
 
 #[derive(Debug, Clone, Copy, Deserialize, Serialize, sqlx::Type)]
@@ -31,10 +30,8 @@ impl Secret {
     }
 }
 
-impl Deref for Secret {
-    type Target = str;
-
-    fn deref(&self) -> &Self::Target {
+impl AsRef<str> for Secret {
+    fn as_ref(&self) -> &str {
         &self.0
     }
 }
@@ -62,7 +59,7 @@ impl Key {
             RETURNING id, type as "type: _", hash
             "#,
             r#type as KeyType,
-            secret.deref()
+            secret.as_ref()
         )
         .fetch_one(pool)
         .await?;
@@ -84,7 +81,7 @@ impl Key {
 
     async fn check_secret(&self, pool: &PgPool, secret: &Secret) -> Result<bool> {
         Ok(
-            sqlx::query_scalar!(r#"SELECT $1 = crypt($2, $1)"#, self.hash, secret.deref())
+            sqlx::query_scalar!(r#"SELECT $1 = crypt($2, $1)"#, self.hash, secret.as_ref())
                 .fetch_one(pool)
                 .await
                 .map(|option| option.expect("NULL from SELECT scalar"))?,

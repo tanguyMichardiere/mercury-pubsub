@@ -5,7 +5,6 @@ use axum::{async_trait, BoxError};
 use chrono::{DateTime, Utc};
 use error::{Error, Result};
 use sqlx::PgPool;
-use std::ops::Deref;
 
 #[cfg(not(feature = "secure"))]
 macro_rules! cookie_name {
@@ -61,10 +60,8 @@ impl RefreshToken {
     }
 }
 
-impl Deref for RefreshToken {
-    type Target = str;
-
-    fn deref(&self) -> &Self::Target {
+impl AsRef<str> for RefreshToken {
+    fn as_ref(&self) -> &str {
         &self.0
     }
 }

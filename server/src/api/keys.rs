@@ -7,7 +7,6 @@ use axum::{Extension, Json, Router};
 use error::Result;
 use serde::Deserialize;
 use sqlx::PgPool;
-use std::ops::Deref;
 use tracing::instrument;
 use uuid::Uuid;
 
@@ -38,7 +37,7 @@ async fn create_key(
     Json(body): Json<CreateKeyBody>,
 ) -> Result<String> {
     let (key, secret) = Key::new(&pool, body.r#type).await?;
-    Ok(format!("{};{}", key.get_id(), secret.deref()))
+    Ok(format!("{};{}", key.get_id(), secret.as_ref()))
 }
 
 #[instrument]
