@@ -1,6 +1,6 @@
 # Mercury
 
-Self-deployable on-demand Server-Sent Events with schema validation
+Self-deployable Server-Sent Events service with schema validation
 
 ## Deployment
 
