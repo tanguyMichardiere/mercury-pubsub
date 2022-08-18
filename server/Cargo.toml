@@ -12,25 +12,25 @@ lto = true
 codegen-units = 1
 
 [dependencies]
-axum = { version = "0.5.13", features = ["headers", "http2"] }
-chrono = { version = "0.4.19", features = ["serde"] }
+axum = { version = "0.5.15", features = ["headers", "http2"] }
+chrono = { version = "0.4.22", features = ["serde"] }
 dotenvy = "0.15.1"
 figment = { version = "0.10.6", features = ["env"] }
-futures = "0.3.21"
+futures = "0.3.23"
 hyper = "0.14.20"
 jsonschema = "0.16.0"
-serde = { version = "1.0.140", features = ["derive"] }
-serde_json = "1.0.82"
+serde = { version = "1.0.143", features = ["derive"] }
+serde_json = "1.0.83"
 sqlx = { version = "0.6.1", features = ["chrono", "json", "macros", "offline", "postgres", "runtime-tokio-rustls", "uuid"] }
-thiserror = "1.0.31"
+thiserror = "1.0.32"
 tokio = { version = "1.20.1", features = ["macros", "rt-multi-thread"] }
 tokio-stream = { version = "0.1.9", features = ["sync"] }
 tower = "0.4.13"
 tower-http = { version = "0.3.4", features = ["fs", "trace"] }
-tracing = "0.1.35"
+tracing = "0.1.36"
 tracing-subscriber = { version = "0.3.15", features = ["env-filter", "json"] }
 uuid = { version = "1.1.2", features = ["serde"] }
 validator = { version = "0.16.0", features = ["derive"] }
 
 [dev-dependencies]
-axum = { version = "0.5.13", features = ["macros"] }
+axum = { version = "0.5.15", features = ["macros"] }
