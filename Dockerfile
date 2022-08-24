@@ -12,7 +12,7 @@ COPY server/Cargo.toml server/Cargo.lock ./
 RUN cargo build --release
 RUN rm src/main.rs
 
-COPY src src
+COPY server/src src
 COPY server/sqlx-data.json .
 RUN RUSTFLAGS="-C target-cpu=native" SQLX_OFFLINE=true cargo build --release --bin=main --package=server --target x86_64-unknown-linux-musl
 COPY server/migrations migrations
