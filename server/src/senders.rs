@@ -6,19 +6,15 @@ use uuid::Uuid;
 
 use crate::models::channel::Channel;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Default, Clone)]
 pub(crate) struct Senders(HashMap<Uuid, broadcast::Sender<Value>>);
 
 impl Senders {
-    pub(crate) fn new() -> Self {
-        Self(HashMap::new())
-    }
-
     pub(crate) fn get(&mut self, channel: &Channel) -> broadcast::Sender<Value> {
         match self.0.get(&channel.id) {
             Some(sender) => sender.clone(),
             None => {
-                let (sender, _) = broadcast::channel(1);
+                let (sender, _) = broadcast::channel(16);
                 self.0.insert(channel.id, sender.clone());
                 sender
             }

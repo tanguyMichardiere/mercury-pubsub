@@ -1,4 +1,5 @@
 use std::convert::Infallible;
+use std::sync::{Arc, RwLock};
 
 use axum::extract::Path;
 use axum::response::sse::{Event, KeepAlive, Sse};
@@ -17,22 +18,27 @@ use crate::senders::Senders;
 
 use error::{Error, Result};
 
+type SendersState = Arc<RwLock<Senders>>;
+
 pub(crate) fn app() -> Router {
     Router::new()
         .route("/:channel_name", get(subscribe).post(publish))
-        .layer(Extension(Senders::new()))
+        .layer(Extension(SendersState::default()))
 }
 
 #[instrument]
 async fn subscribe(
     Extension(pool): Extension<PgPool>,
-    Extension(mut senders): Extension<Senders>,
+    Extension(senders): Extension<SendersState>,
     key: Key,
     Path(channel_name): Path<String>,
 ) -> Result<Sse<impl Stream<Item = std::result::Result<Event, Infallible>>>> {
     let channel = Channel::get_by_name(&pool, &channel_name).await?;
     if key.is_subscriber() && key.authorizes(&pool, &channel).await? {
-        let receiver = senders.get_receiver(&channel);
+        let receiver = senders
+            .write()
+            .expect("RwLock poisoned")
+            .get_receiver(&channel);
         let stream = BroadcastStream::new(receiver).filter_map(|result| match result {
             Ok(value) => Some(Ok(Event::default()
                 .json_data(value)
@@ -51,7 +57,7 @@ async fn subscribe(
 #[instrument]
 async fn publish(
     Extension(pool): Extension<PgPool>,
-    Extension(mut senders): Extension<Senders>,
+    Extension(senders): Extension<SendersState>,
     key: Key,
     Path(channel_name): Path<String>,
     Json(body): Json<Value>,
@@ -59,7 +65,7 @@ async fn publish(
     let channel = Channel::get_by_name(&pool, &channel_name).await?;
     if key.is_publisher() && key.authorizes(&pool, &channel).await? {
         if channel.is_valid(&body) {
-            let sender = senders.get(&channel);
+            let sender = senders.write().expect("RwLock poisoned").get(&channel);
             Ok(format!("{}", sender.send(body).unwrap_or(0)))
         } else {
             Err(Error::from(
