@@ -30,7 +30,7 @@ impl Default for Config {
     fn default() -> Self {
         Self {
             port: 8080,
-            log: "info".into(),
+            log: "warn".to_owned(),
             log_format: LogFormat::Json,
         }
     }
