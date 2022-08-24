@@ -1,10 +1,12 @@
 pub mod config;
 
 pub(crate) mod api;
+mod health;
 pub(crate) mod models;
 pub(crate) mod senders;
 pub(crate) mod sse;
 
+use axum::routing::get;
 use axum::{Extension, Router};
 use sqlx::postgres::PgPoolOptions;
 use sqlx::PgPool;
@@ -12,6 +14,7 @@ use tower_http::trace::TraceLayer;
 
 pub fn app(pool: PgPool) -> Router {
     Router::new()
+        .route("/health", get(health::health))
         .nest("/api", api::app())
         .nest("/sse", sse::app())
         .layer(Extension(pool))
