@@ -33,20 +33,16 @@ async fn subscribe(
     let channel = Channel::get_by_name(&pool, &channel_name).await?;
     if key.is_subscriber() && key.authorizes(&pool, &channel).await? {
         let receiver = senders.get_receiver(&channel);
-        Ok(
-            Sse::new(BroadcastStream::new(receiver).filter_map(|result| {
-                match result {
-                    Ok(value) => Some(Ok(Event::default()
-                        .json_data(value)
-                        .expect("invalid JSON from channel"))),
-                    Err(error) => {
-                        error!(?error);
-                        None
-                    }
-                }
-            }))
-            .keep_alive(KeepAlive::default()),
-        )
+        let stream = BroadcastStream::new(receiver).filter_map(|result| match result {
+            Ok(value) => Some(Ok(Event::default()
+                .json_data(value)
+                .expect("invalid JSON from channel"))),
+            Err(error) => {
+                error!(?error);
+                None
+            }
+        });
+        Ok(Sse::new(stream).keep_alive(KeepAlive::default()))
     } else {
         Err(Error::UnauthorizedChannel)
     }

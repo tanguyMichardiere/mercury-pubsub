@@ -83,8 +83,9 @@ impl Key {
             "#,
             id,
         )
-        .fetch_one(pool)
-        .await?)
+        .fetch_optional(pool)
+        .await?
+        .ok_or(Error::NotFound)?)
     }
 
     /// Check that the secret is the key's.
@@ -216,6 +217,8 @@ pub(crate) mod error {
         InvalidKeyId,
         #[error("Invalid secret key")]
         InvalidSecretKey,
+        #[error("Key not found")]
+        NotFound,
     }
 
     impl From<sqlx::Error> for Error {
@@ -237,6 +240,7 @@ pub(crate) mod error {
                 Error::InvalidSecretKey => {
                     (StatusCode::UNAUTHORIZED, self.to_string()).into_response()
                 }
+                Error::NotFound => (StatusCode::NOT_FOUND, self.to_string()).into_response(),
             }
         }
     }

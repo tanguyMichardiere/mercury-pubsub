@@ -18,7 +18,7 @@ impl Senders {
         match self.0.get(&channel.id) {
             Some(sender) => sender.clone(),
             None => {
-                let (sender, _) = broadcast::channel(16);
+                let (sender, _) = broadcast::channel(1);
                 self.0.insert(channel.id, sender.clone());
                 sender
             }
