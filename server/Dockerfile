@@ -8,14 +8,14 @@ RUN rustup target add x86_64-unknown-linux-musl
 
 RUN cargo new app
 WORKDIR /usr/src/app
-COPY server/Cargo.toml server/Cargo.lock ./
+COPY Cargo.toml Cargo.lock ./
 RUN cargo build --release
 RUN rm src/main.rs
 
-COPY server/src src
-COPY server/sqlx-data.json .
+COPY src src
+COPY sqlx-data.json .
 RUN RUSTFLAGS="-C target-cpu=native" SQLX_OFFLINE=true cargo build --release --bin=main --package=server --target x86_64-unknown-linux-musl
-COPY server/migrations migrations
+COPY migrations migrations
 RUN sqlx migrate run
 
 FROM scratch
