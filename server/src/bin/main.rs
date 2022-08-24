@@ -2,6 +2,7 @@ use std::env;
 use std::net::{IpAddr, Ipv4Addr, SocketAddr};
 
 use dotenvy::dotenv;
+use tracing::{info, info_span};
 use tracing_subscriber::EnvFilter;
 
 use server::config::{Config, LogFormat};
@@ -22,9 +23,14 @@ async fn main() {
 
     tracing_init(EnvFilter::new(config.log), config.log_format);
 
+    let span = info_span!("pre_launch").entered();
+    info!("reading DATABASE_URL env var");
     let database_url = env::var("DATABASE_URL").expect("DATABASE_URL environment variable");
+    info!(?database_url, "connecting to database");
     let pool = pool(&database_url).await.expect("database connection");
+    info!(?pool, "creating app");
     let app = app(pool);
+    span.exit();
 
     axum::Server::bind(&SocketAddr::new(
         IpAddr::V4(Ipv4Addr::UNSPECIFIED),
