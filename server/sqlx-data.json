@@ -64,6 +64,24 @@
     },
     "query": "\n                SELECT * FROM \"Channel\"\n                    WHERE name = $1\n                "
   },
+  "549680b1e20ba77ff2ec9baacd210ae6c26126b5c9110fdfc58570b9453857e0": {
+    "describe": {
+      "columns": [
+        {
+          "name": "count",
+          "ordinal": 0,
+          "type_info": "Int8"
+        }
+      ],
+      "nullable": [
+        null
+      ],
+      "parameters": {
+        "Left": []
+      }
+    },
+    "query": "SELECT COUNT(*) FROM \"_sqlx_migrations\""
+  },
   "60d56c76ad4c04ea1f5f570456d0bf881aa5bd1d42bafacfbeed52ef58a82a4e": {
     "describe": {
       "columns": [
@@ -306,6 +324,24 @@
       }
     },
     "query": "\n            SELECT * FROM \"User\"\n                WHERE name = $1\n            "
+  },
+  "a2edd1b20740ed902a00339c172e598ead4b84c7266249b7705c86426decf372": {
+    "describe": {
+      "columns": [
+        {
+          "name": "count",
+          "ordinal": 0,
+          "type_info": "Int8"
+        }
+      ],
+      "nullable": [
+        null
+      ],
+      "parameters": {
+        "Left": []
+      }
+    },
+    "query": "\n            SELECT COUNT(*) FROM \"_sqlx_migrations\"\n                WHERE success = false\n            "
   },
   "b40f44d8eb8b4d2dda991e18ce8894f17826ab20657064529cadef694c3e75e3": {
     "describe": {
