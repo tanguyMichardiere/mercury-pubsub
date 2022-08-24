@@ -1,13 +1,13 @@
-pub mod auth;
-pub mod channels;
-pub mod extract;
-pub mod keys;
+pub(crate) mod channels;
+pub(crate) mod extract;
+pub(crate) mod keys;
+pub(crate) mod users;
 
 use axum::Router;
 
-pub fn app() -> Router {
+pub(crate) fn app() -> Router {
     Router::new()
-        .nest("/auth", auth::app())
+        .nest("/users", users::app())
         .nest("/channels", channels::app())
         .nest("/keys", keys::app())
 }

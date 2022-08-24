@@ -3,7 +3,7 @@ CREATE TYPE keytype AS ENUM ('publisher', 'subscriber');
 CREATE TABLE "Key" (
     id      uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
     type    keytype     NOT NULL,
-    hash    char(34)    UNIQUE NOT NULL
+    hash    char(34)    NOT NULL
 );
 
 CREATE TABLE "Access" (

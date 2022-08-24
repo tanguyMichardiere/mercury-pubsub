@@ -1,5 +1,0 @@
-#!/usr/bin/env sh
-. "$(dirname -- "$0")/_/husky.sh"
-
-export CI=true
-npm run check-format && npm run lint && npm run check-types

@@ -1,9 +1,11 @@
-use dotenvy::dotenv;
-use server::config::{config, LogFormat};
-use server::{app, pool};
 use std::env;
 use std::net::{IpAddr, Ipv4Addr, SocketAddr};
+
+use dotenvy::dotenv;
 use tracing_subscriber::EnvFilter;
+
+use server::config::{Config, LogFormat};
+use server::{app, pool};
 
 fn tracing_init(env_filter: EnvFilter, log_format: LogFormat) {
     let subscriber_builder = tracing_subscriber::fmt().with_env_filter(env_filter);
@@ -16,7 +18,7 @@ fn tracing_init(env_filter: EnvFilter, log_format: LogFormat) {
 #[tokio::main]
 async fn main() {
     dotenv().ok();
-    let config = config().expect("config parsing");
+    let config = Config::from_env().expect("config parsing");
 
     tracing_init(EnvFilter::new(config.log), config.log_format);
 

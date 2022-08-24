@@ -1,35 +1,31 @@
-use crate::models::channel::Channel;
-use serde_json::Value;
 use std::collections::HashMap;
+
+use serde_json::Value;
 use tokio::sync::broadcast;
 use uuid::Uuid;
 
+use crate::models::channel::Channel;
+
 #[derive(Debug, Clone)]
-pub struct Senders(HashMap<Uuid, broadcast::Sender<Value>>);
+pub(crate) struct Senders(HashMap<Uuid, broadcast::Sender<Value>>);
 
 impl Senders {
-    pub fn new() -> Self {
+    pub(crate) fn new() -> Self {
         Self(HashMap::new())
     }
 
-    pub fn get(&mut self, channel: &Channel) -> broadcast::Sender<Value> {
-        match self.0.get(&channel.get_id()) {
+    pub(crate) fn get(&mut self, channel: &Channel) -> broadcast::Sender<Value> {
+        match self.0.get(&channel.id) {
             Some(sender) => sender.clone(),
             None => {
                 let (sender, _) = broadcast::channel(16);
-                self.0.insert(channel.get_id(), sender.clone());
+                self.0.insert(channel.id, sender.clone());
                 sender
             }
         }
     }
 
-    pub fn get_receiver(&mut self, channel: &Channel) -> broadcast::Receiver<Value> {
+    pub(crate) fn get_receiver(&mut self, channel: &Channel) -> broadcast::Receiver<Value> {
         self.get(channel).subscribe()
-    }
-}
-
-impl Default for Senders {
-    fn default() -> Self {
-        Self::new()
     }
 }

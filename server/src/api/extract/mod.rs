@@ -1,1 +1,1 @@
-pub mod validated_json;
+pub(crate) mod validated_json;

@@ -1,25 +1,29 @@
-use crate::models::channel::Channel;
 use axum::extract::{FromRequest, RequestParts};
 use axum::headers::authorization::Bearer;
 use axum::headers::Authorization;
 use axum::{async_trait, Extension, TypedHeader};
-use error::{Error, Result};
 use serde::{Deserialize, Serialize};
 use sqlx::{PgPool, Postgres, QueryBuilder};
 use uuid::Uuid;
+
+use crate::models::channel::Channel;
+
+use error::{Error, Result};
 
 #[derive(Debug, Clone, Copy, Deserialize, Serialize, sqlx::Type)]
 #[serde(rename_all = "camelCase")]
 #[sqlx(type_name = "keytype")]
 #[sqlx(rename_all = "lowercase")]
-pub enum KeyType {
+pub(crate) enum KeyType {
     Publisher,
     Subscriber,
 }
 
-pub struct Secret(String);
+pub(crate) struct Secret(String);
 
+/// CRUD
 impl Secret {
+    /// Create a new secret.
     async fn new(pool: &PgPool) -> Result<Self> {
         Ok(Self(
             sqlx::query_scalar!(r#"SELECT encode(gen_random_bytes(48), 'base64')"#)
@@ -37,19 +41,22 @@ impl AsRef<str> for Secret {
 }
 
 #[derive(Debug, Serialize)]
-pub struct Key {
-    id: Uuid,
+pub(crate) struct Key {
+    pub(crate) id: Uuid,
     r#type: KeyType,
     #[serde(skip_serializing)]
     hash: String,
 }
 
-impl Key {
-    pub fn get_id(&self) -> Uuid {
-        self.id
-    }
+trait KeyTypeTrait {}
 
-    pub async fn new(pool: &PgPool, r#type: KeyType) -> Result<(Self, Secret)> {
+/// CRUD
+impl Key {
+    /// Create a new key.
+    ///
+    /// Returns the key and its secret. The secret will only be returned once, when the key is
+    /// created.
+    pub(crate) async fn new(pool: &PgPool, r#type: KeyType) -> Result<(Self, Secret)> {
         let secret = Secret::new(pool).await?;
         let key = sqlx::query_as!(
             Self,
@@ -59,26 +66,28 @@ impl Key {
             RETURNING id, type as "type: _", hash
             "#,
             r#type as KeyType,
-            secret.as_ref()
+            secret.as_ref(),
         )
         .fetch_one(pool)
         .await?;
         Ok((key, secret))
     }
 
-    pub async fn get(pool: &PgPool, id: Uuid) -> Result<Self> {
+    /// Get a key.
+    pub(crate) async fn get(pool: &PgPool, id: Uuid) -> Result<Self> {
         Ok(sqlx::query_as!(
             Self,
             r#"
             SELECT id, type as "type: _", hash FROM "Key"
                 WHERE id = $1
             "#,
-            id
+            id,
         )
         .fetch_one(pool)
         .await?)
     }
 
+    /// Check that the secret is the key's.
     async fn check_secret(&self, pool: &PgPool, secret: &Secret) -> Result<bool> {
         Ok(
             sqlx::query_scalar!(r#"SELECT $1 = crypt($2, $1)"#, self.hash, secret.as_ref())
@@ -88,7 +97,8 @@ impl Key {
         )
     }
 
-    pub async fn get_all(pool: &PgPool) -> Result<Vec<Self>> {
+    /// Get all keys.
+    pub(crate) async fn get_all(pool: &PgPool) -> Result<Vec<Self>> {
         Ok(
             sqlx::query_as!(Self, r#"SELECT id, type as "type: _", hash FROM "Key""#)
                 .fetch_all(pool)
@@ -96,13 +106,14 @@ impl Key {
         )
     }
 
-    pub async fn set_channels(&self, pool: &PgPool, ids: Vec<Uuid>) -> Result<()> {
+    /// Set the channels the key authorizes.
+    pub(crate) async fn set_channels(&self, pool: &PgPool, ids: Vec<Uuid>) -> Result<()> {
         sqlx::query!(
             r#"
             DELETE FROM "Access"
                 WHERE key_id = $1
             "#,
-            self.id
+            self.id,
         )
         .execute(pool)
         .await?;
@@ -115,41 +126,47 @@ impl Key {
         Ok(())
     }
 
-    pub async fn delete(pool: &PgPool, id: Uuid) -> Result<Self> {
-        Ok(sqlx::query_as!(
+    /// Delete the key.
+    pub(crate) async fn delete(self, pool: &PgPool) -> Result<()> {
+        sqlx::query_as!(
             Self,
             r#"
             DELETE FROM "Key"
                 WHERE id = $1
-            RETURNING id, type as "type: _", hash
             "#,
-            id
+            self.id,
         )
         .fetch_one(pool)
-        .await?)
+        .await?;
+        Ok(())
     }
+}
 
-    pub fn is_publisher(&self) -> bool {
+impl Key {
+    /// Returns whether the key is a publisher key.
+    pub(crate) fn is_publisher(&self) -> bool {
         matches!(self.r#type, KeyType::Publisher)
     }
 
-    pub fn is_subscriber(&self) -> bool {
+    /// Returns whether the key is a subscriber key.
+    pub(crate) fn is_subscriber(&self) -> bool {
         matches!(self.r#type, KeyType::Subscriber)
     }
 
-    pub async fn authorizes(&self, pool: &PgPool, channel: &Channel) -> Result<bool> {
+    /// Returns whether the key authorizes the channel.
+    pub(crate) async fn authorizes(&self, pool: &PgPool, channel: &Channel) -> Result<bool> {
         Ok(sqlx::query_scalar!(
             r#"
             SELECT COUNT(*) FROM "Access"
                 WHERE key_id = $1 AND channel_id = $2
             "#,
             self.id,
-            channel.get_id()
+            channel.id,
         )
         .fetch_one(pool)
         .await?
         .expect("NULL from SELECT scalar")
-            > 0)
+            == 1)
     }
 }
 
@@ -166,7 +183,7 @@ where
         let authorization_header_value =
             TypedHeader::<Authorization<Bearer>>::from_request(req).await?;
         let token = authorization_header_value.token();
-        let (id, secret) = token.split_once(";").ok_or(Error::MissingSemiColon)?;
+        let (id, secret) = token.split_once(';').ok_or(Error::MissingSemiColon)?;
         let id = Uuid::try_parse(id).map_err(|_| Error::InvalidKeyId)?;
         let secret = Secret(secret.to_owned());
         let Extension(pool) = Extension::<PgPool>::from_request(req)
@@ -181,16 +198,16 @@ where
     }
 }
 
-pub mod error {
+pub(crate) mod error {
     use axum::extract::rejection::TypedHeaderRejection;
     use axum::response::IntoResponse;
     use hyper::StatusCode;
-    use tracing::error;
+    use tracing::{debug, error};
 
-    pub type Result<T> = std::result::Result<T, Error>;
+    pub(crate) type Result<T> = std::result::Result<T, Error>;
 
     #[derive(Debug, thiserror::Error)]
-    pub enum Error {
+    pub(crate) enum Error {
         #[error(transparent)]
         TypedHeaderRejection(#[from] TypedHeaderRejection),
         #[error("Missing semi-colon in API key")]
@@ -210,11 +227,16 @@ pub mod error {
 
     impl IntoResponse for Error {
         fn into_response(self) -> axum::response::Response {
+            debug!(?self);
             match self {
                 Error::TypedHeaderRejection(error) => error.into_response(),
-                Error::MissingSemiColon => (StatusCode::UNAUTHORIZED, self).into_response(),
-                Error::InvalidKeyId => (StatusCode::UNAUTHORIZED, self).into_response(),
-                Error::InvalidSecretKey => (StatusCode::UNAUTHORIZED, self).into_response(),
+                Error::MissingSemiColon => {
+                    (StatusCode::UNAUTHORIZED, self.to_string()).into_response()
+                }
+                Error::InvalidKeyId => (StatusCode::UNAUTHORIZED, self.to_string()).into_response(),
+                Error::InvalidSecretKey => {
+                    (StatusCode::UNAUTHORIZED, self.to_string()).into_response()
+                }
             }
         }
     }

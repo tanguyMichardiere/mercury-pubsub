@@ -1,31 +1,31 @@
-use crate::models::key::Key;
-use error::{Error, Result};
 use jsonschema::{ErrorIterator, JSONSchema};
 use serde::Serialize;
 use serde_json::Value;
 use sqlx::PgPool;
 use uuid::Uuid;
 
-pub struct RawChannel {
+use crate::models::key::Key;
+
+use error::{Error, Result};
+
+pub(crate) struct RawChannel {
     id: Uuid,
     name: String,
     schema: Value,
 }
 
 #[derive(Serialize)]
-pub struct Channel {
-    id: Uuid,
+pub(crate) struct Channel {
+    pub(crate) id: Uuid,
     name: String,
     schema: Value,
     #[serde(skip_serializing)]
     compiled_schema: JSONSchema,
 }
 
+/// CRUD
 impl Channel {
-    pub fn get_id(&self) -> Uuid {
-        self.id
-    }
-
+    /// Create a `Channel` from a `RawChannel`.
     fn from_raw_channel(raw_channel: RawChannel) -> Self {
         Self {
             id: raw_channel.id,
@@ -36,7 +36,8 @@ impl Channel {
         }
     }
 
-    pub async fn new(pool: &PgPool, name: &str, schema: &Value) -> Result<Self> {
+    /// Create a new channel.
+    pub(crate) async fn new(pool: &PgPool, name: &str, schema: &Value) -> Result<Self> {
         JSONSchema::compile(schema)?;
         Ok(Self::from_raw_channel(
             sqlx::query_as!(
@@ -47,22 +48,23 @@ impl Channel {
                 RETURNING *
                 "#,
                 name,
-                schema
+                schema,
             )
             .fetch_one(pool)
             .await?,
         ))
     }
 
-    pub async fn get(pool: &PgPool, name: &str) -> Result<Self> {
+    /// Get a channel.
+    pub(crate) async fn get(pool: &PgPool, id: Uuid) -> Result<Self> {
         Ok(Self::from_raw_channel(
             sqlx::query_as!(
                 RawChannel,
                 r#"
                 SELECT * FROM "Channel"
-                    WHERE name = $1
+                    WHERE id = $1
                 "#,
-                name
+                id,
             )
             .fetch_optional(pool)
             .await?
@@ -70,7 +72,25 @@ impl Channel {
         ))
     }
 
-    pub async fn get_all(pool: &PgPool) -> Result<Vec<Self>> {
+    /// Get a channel by its name.
+    pub(crate) async fn get_by_name(pool: &PgPool, name: &str) -> Result<Self> {
+        Ok(Self::from_raw_channel(
+            sqlx::query_as!(
+                RawChannel,
+                r#"
+                SELECT * FROM "Channel"
+                    WHERE name = $1
+                "#,
+                name,
+            )
+            .fetch_optional(pool)
+            .await?
+            .ok_or(Error::NotFound)?,
+        ))
+    }
+
+    /// Get all channels.
+    pub(crate) async fn get_all(pool: &PgPool) -> Result<Vec<Self>> {
         Ok(sqlx::query_as!(RawChannel, r#"SELECT * FROM "Channel""#)
             .fetch_all(pool)
             .await?
@@ -79,7 +99,8 @@ impl Channel {
             .collect())
     }
 
-    pub async fn get_from_key(pool: &PgPool, key: &Key) -> Result<Vec<Self>> {
+    /// Get channels by their key.
+    pub(crate) async fn get_from_key(pool: &PgPool, key: &Key) -> Result<Vec<Self>> {
         Ok(sqlx::query_as!(
             RawChannel,
             r#"
@@ -88,7 +109,7 @@ impl Channel {
                     ON "Channel".id = "Access".channel_id
                 WHERE key_id = $1
             "#,
-            key.get_id()
+            key.id,
         )
         .fetch_all(pool)
         .await?
@@ -97,11 +118,65 @@ impl Channel {
         .collect())
     }
 
-    pub fn is_valid(&self, instance: &Value) -> bool {
+    /// Rename the channel.
+    pub(crate) async fn rename(&mut self, pool: &PgPool, name: &str) -> Result<()> {
+        self.name = sqlx::query_scalar!(
+            r#"
+            UPDATE "Channel"
+                SET name = $1
+                WHERE id = $2
+            RETURNING name
+            "#,
+            name,
+            self.id,
+        )
+        .fetch_one(pool)
+        .await?;
+        Ok(())
+    }
+
+    /// Change the channel's schema.
+    pub(crate) async fn change_schema(&mut self, pool: &PgPool, schema: &Value) -> Result<()> {
+        self.schema = sqlx::query_scalar!(
+            r#"
+            UPDATE "Channel"
+                SET schema = $1
+                WHERE id = $2
+            RETURNING schema
+            "#,
+            schema,
+            self.id,
+        )
+        .fetch_one(pool)
+        .await?;
+        self.compiled_schema =
+            JSONSchema::compile(&self.schema).expect("invalid schema in database");
+        Ok(())
+    }
+
+    /// Delete the channel.
+    pub(crate) async fn delete(self, pool: &PgPool) -> Result<()> {
+        sqlx::query!(
+            r#"
+            DELETE FROM "Channel"
+                WHERE id = $1
+            "#,
+            self.id,
+        )
+        .execute(pool)
+        .await?;
+        Ok(())
+    }
+}
+
+impl Channel {
+    /// Run validation on the instance, only returning a boolean indicating success or failure.
+    pub(crate) fn is_valid(&self, instance: &Value) -> bool {
         self.compiled_schema.is_valid(instance)
     }
 
-    pub fn validate<'a>(
+    /// Validate the instance. This is slower than `Channel::is_valid`.
+    pub(crate) fn validate<'a>(
         &'a self,
         instance: &'a Value,
     ) -> std::result::Result<(), ErrorIterator<'a>> {
@@ -109,25 +184,32 @@ impl Channel {
     }
 }
 
-pub mod error {
+pub(crate) mod error {
     use axum::response::IntoResponse;
     use hyper::StatusCode;
     use jsonschema::ValidationError;
-    use tracing::error;
+    use tracing::{debug, error};
 
-    pub type Result<T> = std::result::Result<T, Error>;
+    pub(crate) type Result<T> = std::result::Result<T, Error>;
 
     #[derive(Debug, thiserror::Error)]
-    pub enum Error {
+    pub(crate) enum Error {
         // TODO: include information about the error
         #[error("Invalid schema")]
         InvalidSchema,
         #[error("Channel not found")]
         NotFound,
+        #[error("Duplicate channel name")]
+        DuplicateName,
     }
 
     impl From<sqlx::Error> for Error {
         fn from(error: sqlx::Error) -> Self {
+            if let Some(database_error) = error.as_database_error() {
+                if database_error.constraint() == Some("Channel_name_key") {
+                    return Self::DuplicateName;
+                }
+            }
             error!(?error);
             panic!("unknown database error");
         }
@@ -141,9 +223,13 @@ pub mod error {
 
     impl IntoResponse for Error {
         fn into_response(self) -> axum::response::Response {
+            debug!(?self);
             match self {
-                Error::InvalidSchema => (StatusCode::UNPROCESSABLE_ENTITY, self).into_response(),
-                Error::NotFound => (StatusCode::NOT_FOUND, self).into_response(),
+                Error::InvalidSchema => {
+                    (StatusCode::UNPROCESSABLE_ENTITY, self.to_string()).into_response()
+                }
+                Error::NotFound => (StatusCode::NOT_FOUND, self.to_string()).into_response(),
+                Error::DuplicateName => (StatusCode::BAD_REQUEST, self.to_string()).into_response(),
             }
         }
     }

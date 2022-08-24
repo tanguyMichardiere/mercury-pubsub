@@ -1,26 +1,30 @@
-use crate::models::channel::Channel;
-use crate::models::key::{Key, KeyType};
-use crate::models::session::Session;
 use axum::extract::Path;
 use axum::routing::get;
 use axum::{Extension, Json, Router};
-use error::Result;
+use hyper::StatusCode;
 use serde::Deserialize;
 use sqlx::PgPool;
 use tracing::instrument;
 use uuid::Uuid;
 
-pub fn app() -> Router {
+use crate::models::channel::Channel;
+use crate::models::key::{Key, KeyType};
+use crate::models::user::User;
+
+use error::Result;
+
+pub(crate) fn app() -> Router {
     Router::new()
         .route("/", get(list_keys).post(create_key))
         .route(
-            "/:key_id",
-            get(list_channels).put(edit_channels).delete(delete_key),
+            "/:id",
+            get(list_channels).patch(edit_channels).delete(delete_key),
         )
 }
 
+/// Get all keys.
 #[instrument]
-async fn list_keys(Extension(pool): Extension<PgPool>, session: Session) -> Result<Json<Vec<Key>>> {
+async fn list_keys(Extension(pool): Extension<PgPool>, user: User) -> Result<Json<Vec<Key>>> {
     Ok(Json(Key::get_all(&pool).await?))
 }
 
@@ -30,55 +34,63 @@ struct CreateKeyBody {
     r#type: KeyType,
 }
 
+/// Create a key.
 #[instrument]
 async fn create_key(
     Extension(pool): Extension<PgPool>,
-    session: Session,
+    user: User,
     Json(body): Json<CreateKeyBody>,
 ) -> Result<String> {
     let (key, secret) = Key::new(&pool, body.r#type).await?;
-    Ok(format!("{};{}", key.get_id(), secret.as_ref()))
+    Ok(format!("{};{}", key.id, secret.as_ref()))
 }
 
+/// Get all channels that a key authorizes.
 #[instrument]
 async fn list_channels(
-    Path(key_id): Path<Uuid>,
     Extension(pool): Extension<PgPool>,
-    session: Session,
+    user: User,
+    Path(id): Path<Uuid>,
 ) -> Result<Json<Vec<Channel>>> {
-    let key = Key::get(&pool, key_id).await?;
+    let key = Key::get(&pool, id).await?;
     Ok(Json(Channel::get_from_key(&pool, &key).await?))
 }
 
+/// Set the channels that a key authorizes.
 #[instrument]
 async fn edit_channels(
-    Path(key_id): Path<Uuid>,
     Extension(pool): Extension<PgPool>,
-    session: Session,
-    Json(ids): Json<Vec<Uuid>>,
+    user: User,
+    Path(id): Path<Uuid>,
+    Json(body): Json<Vec<Uuid>>,
 ) -> Result<()> {
-    let key = Key::get(&pool, key_id).await?;
-    key.set_channels(&pool, ids).await?;
+    let key = Key::get(&pool, id).await?;
+    key.set_channels(&pool, body).await?;
     Ok(())
 }
 
+/// Delete a key.
 #[instrument]
 async fn delete_key(
-    Path(key_id): Path<Uuid>,
     Extension(pool): Extension<PgPool>,
-    session: Session,
-) -> Result<Json<Key>> {
-    Ok(Json(Key::delete(&pool, key_id).await?))
+    user: User,
+    Path(id): Path<Uuid>,
+) -> Result<StatusCode> {
+    let key = Key::get(&pool, id).await?;
+    key.delete(&pool).await?;
+    Ok(StatusCode::NO_CONTENT)
 }
 
 mod error {
-    use crate::models::{channel, key};
     use axum::response::IntoResponse;
+    use tracing::debug;
 
-    pub type Result<T> = std::result::Result<T, Error>;
+    use crate::models::{channel, key};
+
+    pub(crate) type Result<T> = std::result::Result<T, Error>;
 
     #[derive(Debug, thiserror::Error)]
-    pub enum Error {
+    pub(crate) enum Error {
         #[error(transparent)]
         KeyError(#[from] key::error::Error),
         #[error(transparent)]
@@ -87,6 +99,7 @@ mod error {
 
     impl IntoResponse for Error {
         fn into_response(self) -> axum::response::Response {
+            debug!(?self);
             match self {
                 Error::KeyError(error) => error.into_response(),
                 Error::ChannelError(error) => error.into_response(),

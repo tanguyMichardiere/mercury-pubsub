@@ -1,72 +1,5 @@
 {
   "db": "PostgreSQL",
-  "05b4b0a4cef984d3963460ef4a64849b2e33aab280402baac9647cd511807ee1": {
-    "describe": {
-      "columns": [
-        {
-          "name": "id",
-          "ordinal": 0,
-          "type_info": "Uuid"
-        },
-        {
-          "name": "expires",
-          "ordinal": 1,
-          "type_info": "Timestamptz"
-        },
-        {
-          "name": "user_id",
-          "ordinal": 2,
-          "type_info": "Uuid"
-        }
-      ],
-      "nullable": [
-        false,
-        false,
-        false
-      ],
-      "parameters": {
-        "Left": [
-          "Text",
-          "Text",
-          "Uuid"
-        ]
-      }
-    },
-    "query": "\n            INSERT INTO \"Session\" (access_token_hash, refresh_token_hash, expires, user_id)\n                VALUES (crypt($1, gen_salt('md5')), crypt($2, gen_salt('md5')), CURRENT_TIMESTAMP + interval '1 day', $3)\n            RETURNING id, expires, user_id\n            "
-  },
-  "1046eb8026f117c377610d7b237cf767b2a7dab4b59109447f9a7d96c01eb77a": {
-    "describe": {
-      "columns": [
-        {
-          "name": "id",
-          "ordinal": 0,
-          "type_info": "Uuid"
-        },
-        {
-          "name": "expires",
-          "ordinal": 1,
-          "type_info": "Timestamptz"
-        },
-        {
-          "name": "user_id",
-          "ordinal": 2,
-          "type_info": "Uuid"
-        }
-      ],
-      "nullable": [
-        false,
-        false,
-        false
-      ],
-      "parameters": {
-        "Left": [
-          "Text",
-          "Text"
-        ]
-      }
-    },
-    "query": "\n            UPDATE \"Session\"\n                SET access_token_hash = crypt($1, gen_salt('md5')),\n                    expires = CURRENT_TIMESTAMP + interval '1 day'\n                WHERE refresh_token_hash = crypt($2, refresh_token_hash)\n            RETURNING id, expires, user_id\n            "
-  },
   "16bd069d7623e8f709ace3b8058586180bcda1f9be01a328c178c7f6d1f1cc0b": {
     "describe": {
       "columns": [
@@ -131,51 +64,6 @@
     },
     "query": "\n                SELECT * FROM \"Channel\"\n                    WHERE name = $1\n                "
   },
-  "374a89ca323b2002887f524baff0872e4256e7a27e30c543a5de5fcc0d11873d": {
-    "describe": {
-      "columns": [],
-      "nullable": [],
-      "parameters": {
-        "Left": [
-          "Text"
-        ]
-      }
-    },
-    "query": "\n            DELETE FROM \"Session\"\n                WHERE refresh_token_hash = crypt($1, refresh_token_hash)\n            "
-  },
-  "455d7e3ae7cbbafdcec806450adf5490357f7d9739ba595088f566111b35fc98": {
-    "describe": {
-      "columns": [
-        {
-          "name": "id",
-          "ordinal": 0,
-          "type_info": "Uuid"
-        },
-        {
-          "name": "name",
-          "ordinal": 1,
-          "type_info": "Varchar"
-        },
-        {
-          "name": "password_hash",
-          "ordinal": 2,
-          "type_info": "Bpchar"
-        }
-      ],
-      "nullable": [
-        false,
-        false,
-        false
-      ],
-      "parameters": {
-        "Left": [
-          "Varchar",
-          "Text"
-        ]
-      }
-    },
-    "query": "\n            INSERT INTO \"User\" (name, password_hash)\n                VALUES ($1, crypt($2, gen_salt('md5')))\n            RETURNING *\n            "
-  },
   "60d56c76ad4c04ea1f5f570456d0bf881aa5bd1d42bafacfbeed52ef58a82a4e": {
     "describe": {
       "columns": [
@@ -233,9 +121,15 @@
           "name": "password_hash",
           "ordinal": 2,
           "type_info": "Bpchar"
+        },
+        {
+          "name": "rank",
+          "ordinal": 3,
+          "type_info": "Int4"
         }
       ],
       "nullable": [
+        false,
         false,
         false,
         false
@@ -247,6 +141,46 @@
       }
     },
     "query": "\n            SELECT * FROM \"User\"\n                WHERE id = $1\n            "
+  },
+  "72f82293186cb7d5aa5e7aa33bb866024c391d79f55583b0aacde9a79131cd75": {
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Uuid"
+        },
+        {
+          "name": "name",
+          "ordinal": 1,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "password_hash",
+          "ordinal": 2,
+          "type_info": "Bpchar"
+        },
+        {
+          "name": "rank",
+          "ordinal": 3,
+          "type_info": "Int4"
+        }
+      ],
+      "nullable": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "parameters": {
+        "Left": [
+          "Varchar",
+          "Text",
+          "Int4"
+        ]
+      }
+    },
+    "query": "\n            INSERT INTO \"User\" (name, password_hash, rank)\n                VALUES ($1, crypt($2, gen_salt('md5')), $3)\n            RETURNING *\n            "
   },
   "7538721029e5f3af1942c065c171fc0dc82fdf976f875118a91d534f320e6b6c": {
     "describe": {
@@ -260,79 +194,50 @@
     },
     "query": "\n            DELETE FROM \"Access\"\n                WHERE key_id = $1\n            "
   },
-  "7c7f076b1ed196df9280e856465a6aeff4bd33137346452209cc3e7a0da550bc": {
+  "75722bc6d2e5171ac15012aebb2219f5db4336d8db7b30dfd47fe2a31556db5c": {
     "describe": {
-      "columns": [
-        {
-          "name": "id",
-          "ordinal": 0,
-          "type_info": "Uuid"
-        },
-        {
-          "name": "type: _",
-          "ordinal": 1,
-          "type_info": {
-            "Custom": {
-              "kind": {
-                "Enum": [
-                  "publisher",
-                  "subscriber"
-                ]
-              },
-              "name": "keytype"
-            }
-          }
-        },
-        {
-          "name": "hash",
-          "ordinal": 2,
-          "type_info": "Bpchar"
-        }
-      ],
-      "nullable": [
-        false,
-        false,
-        false
-      ],
+      "columns": [],
+      "nullable": [],
       "parameters": {
         "Left": [
           "Uuid"
         ]
       }
     },
-    "query": "\n            DELETE FROM \"Key\"\n                WHERE id = $1\n            RETURNING id, type as \"type: _\", hash\n            "
+    "query": "\n                DELETE FROM \"User\"\n                    WHERE id = $1\n                "
   },
-  "8329a30c862bfb6c14743d1cde073c5c58cf7c583430c479b90580d6653d1136": {
+  "86a1db5fdb78787bd4085d1fcfea7e3f2f40426934edeba4cd08ec312322175e": {
     "describe": {
       "columns": [
         {
-          "name": "id",
+          "name": "schema",
           "ordinal": 0,
-          "type_info": "Uuid"
-        },
-        {
-          "name": "expires",
-          "ordinal": 1,
-          "type_info": "Timestamptz"
-        },
-        {
-          "name": "user_id",
-          "ordinal": 2,
-          "type_info": "Uuid"
+          "type_info": "Jsonb"
         }
       ],
       "nullable": [
-        false,
-        false,
         false
       ],
       "parameters": {
         "Left": [
-          "Text"
+          "Jsonb",
+          "Uuid"
         ]
       }
     },
-    "query": "\n            SELECT id, expires, user_id FROM \"Session\"\n                WHERE access_token_hash = crypt($1, access_token_hash)\n            "
+    "query": "\n            UPDATE \"Channel\"\n                SET schema = $1\n                WHERE id = $2\n            RETURNING schema\n            "
+  },
+  "8efd1242602288b80fd3b9b2fabfbf9396db6615efb8e26d90f1991b17c9ba67": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Left": [
+          "Uuid"
+        ]
+      }
+    },
+    "query": "\n            DELETE FROM \"Key\"\n                WHERE id = $1\n            "
   },
   "941a168ec978eecaea4486053fab975f068493e2a492ddf99b099e34a6e1bdc3": {
     "describe": {
@@ -381,9 +286,15 @@
           "name": "password_hash",
           "ordinal": 2,
           "type_info": "Bpchar"
+        },
+        {
+          "name": "rank",
+          "ordinal": 3,
+          "type_info": "Int4"
         }
       ],
       "nullable": [
+        false,
         false,
         false,
         false
@@ -395,16 +306,6 @@
       }
     },
     "query": "\n            SELECT * FROM \"User\"\n                WHERE name = $1\n            "
-  },
-  "9d3e76f7c7390ae5dd7715ffaae38a594d1308ef9f0ed5c492063f8778faeeec": {
-    "describe": {
-      "columns": [],
-      "nullable": [],
-      "parameters": {
-        "Left": []
-      }
-    },
-    "query": "\n            DELETE FROM \"Session\"\n                WHERE expires < CURRENT_TIMESTAMP\n            "
   },
   "b40f44d8eb8b4d2dda991e18ce8894f17826ab20657064529cadef694c3e75e3": {
     "describe": {
@@ -439,23 +340,91 @@
     },
     "query": "\n                INSERT INTO \"Channel\" (name, schema)\n                    VALUES ($1, $2)\n                RETURNING *\n                "
   },
-  "d5d3a3f46f7cf1a9a6ab4bbd5df9dc1e75f5deddcf822ba1f2fb83169f4837ff": {
+  "c5ef9080d0b66c7250ed2b8607419724f195a31e71ff11a6ea0dc97232ab61b4": {
     "describe": {
       "columns": [
         {
-          "name": "count",
+          "name": "id",
           "ordinal": 0,
-          "type_info": "Int8"
+          "type_info": "Uuid"
+        },
+        {
+          "name": "name",
+          "ordinal": 1,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "schema",
+          "ordinal": 2,
+          "type_info": "Jsonb"
         }
       ],
       "nullable": [
-        null
+        false,
+        false,
+        false
       ],
       "parameters": {
-        "Left": []
+        "Left": [
+          "Uuid"
+        ]
       }
     },
-    "query": "SELECT COUNT(*) FROM \"User\""
+    "query": "\n                SELECT * FROM \"Channel\"\n                    WHERE id = $1\n                "
+  },
+  "c9ab482fd2d2027e01f728ccc590b23a52fef4b446a78659a5816296c0a5fe43": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Left": [
+          "Uuid"
+        ]
+      }
+    },
+    "query": "\n            DELETE FROM \"Channel\"\n                WHERE id = $1\n            "
+  },
+  "cbac574ecb5eb91f6275b6ed524d287585ad660fb01a2dc8554a18e838a769be": {
+    "describe": {
+      "columns": [
+        {
+          "name": "password_hash",
+          "ordinal": 0,
+          "type_info": "Bpchar"
+        }
+      ],
+      "nullable": [
+        false
+      ],
+      "parameters": {
+        "Left": [
+          "Text",
+          "Uuid"
+        ]
+      }
+    },
+    "query": "\n            UPDATE \"User\"\n                SET password_hash = crypt($1, gen_salt('md5'))\n                WHERE id = $2\n            RETURNING password_hash\n            "
+  },
+  "d2efd6aa242847a1a1ddaea2b47f6831419397fa2cf8b71a8019b65fc3b31883": {
+    "describe": {
+      "columns": [
+        {
+          "name": "name",
+          "ordinal": 0,
+          "type_info": "Varchar"
+        }
+      ],
+      "nullable": [
+        false
+      ],
+      "parameters": {
+        "Left": [
+          "Varchar",
+          "Uuid"
+        ]
+      }
+    },
+    "query": "\n            UPDATE \"Channel\"\n                SET name = $1\n                WHERE id = $2\n            RETURNING name\n            "
   },
   "dbda9dd65c92e02e1f2d197301033fb91d1f420a1d6e25507e9e71a63c1d44eb": {
     "describe": {
@@ -496,6 +465,27 @@
     },
     "query": "SELECT $1 = crypt($2, $1)"
   },
+  "e0904f33cd85d0c921a2b5bba01e9cbf78a56c2da0931ad8997dcecf0d944485": {
+    "describe": {
+      "columns": [
+        {
+          "name": "name",
+          "ordinal": 0,
+          "type_info": "Varchar"
+        }
+      ],
+      "nullable": [
+        false
+      ],
+      "parameters": {
+        "Left": [
+          "Varchar",
+          "Uuid"
+        ]
+      }
+    },
+    "query": "\n            UPDATE \"User\"\n                SET name = $1\n                WHERE id = $2\n            RETURNING name\n            "
+  },
   "e5016b3e229043ff2550345e3c9fb4dbea0211ba4079b44295497ab9269b8e29": {
     "describe": {
       "columns": [
@@ -516,6 +506,44 @@
       }
     },
     "query": "\n            SELECT COUNT(*) FROM \"Access\"\n                WHERE key_id = $1 AND channel_id = $2\n            "
+  },
+  "e6f973df236e9de3b4d3b48686851f60469295bd3073afcf523589d3380a3dd3": {
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Uuid"
+        },
+        {
+          "name": "name",
+          "ordinal": 1,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "password_hash",
+          "ordinal": 2,
+          "type_info": "Bpchar"
+        },
+        {
+          "name": "rank",
+          "ordinal": 3,
+          "type_info": "Int4"
+        }
+      ],
+      "nullable": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "parameters": {
+        "Left": [
+          "Int4"
+        ]
+      }
+    },
+    "query": "\n            SELECT * FROM \"User\"\n                WHERE rank >= $1\n            "
   },
   "f00076a623702b253280b414a15bddba4de6af4c6e8db48dc842f9d48748da5a": {
     "describe": {

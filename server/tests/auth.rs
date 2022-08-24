@@ -1,13 +1,15 @@
+use std::str;
+
 use axum::http::Request;
 use axum::response::Response;
 use axum::Router;
 use chrono::DateTime;
 use hyper::{header, Body, StatusCode};
 use serde_json::{from_str, json, to_string, Value};
-use server::app;
 use sqlx::PgPool;
-use std::str;
 use tower::{Service, ServiceExt};
+
+use server::app;
 
 const REFRESH_TOKEN_COOKIE_NAME: &'static str = "refreshToken";
 

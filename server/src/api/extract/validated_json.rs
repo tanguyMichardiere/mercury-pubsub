@@ -2,11 +2,12 @@ use axum::body::HttpBody;
 use axum::extract::{FromRequest, RequestParts};
 use axum::BoxError;
 use axum::{async_trait, Json};
-use error::Error;
 use serde::de::DeserializeOwned;
 use validator::Validate;
 
-pub struct ValidatedJson<T>(pub T);
+use error::Error;
+
+pub(crate) struct ValidatedJson<T>(pub(crate) T);
 
 #[async_trait]
 impl<T, B> FromRequest<B> for ValidatedJson<T>
@@ -29,10 +30,11 @@ mod error {
     use axum::extract::rejection::JsonRejection;
     use axum::response::IntoResponse;
     use hyper::StatusCode;
+    use tracing::debug;
     use validator::ValidationErrors;
 
     #[derive(Debug, thiserror::Error)]
-    pub enum Error {
+    pub(crate) enum Error {
         #[error(transparent)]
         JsonRejection(#[from] JsonRejection),
         #[error(transparent)]
@@ -41,6 +43,7 @@ mod error {
 
     impl IntoResponse for Error {
         fn into_response(self) -> axum::response::Response {
+            debug!(?self);
             match self {
                 Self::JsonRejection(json_rejection) => json_rejection.into_response(),
                 Self::ValidationErrors(validation_errors) => (
