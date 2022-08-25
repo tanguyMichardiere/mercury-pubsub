@@ -1,6 +1,7 @@
-use axum::extract::{FromRequest, RequestParts};
+use axum::extract::FromRequestParts;
 use axum::headers::authorization::Basic;
 use axum::headers::Authorization;
+use axum::http::request::Parts;
 use axum::{async_trait, Extension, TypedHeader};
 use serde::Serialize;
 use sqlx::PgPool;
@@ -150,15 +151,16 @@ impl User {
 }
 
 #[async_trait]
-impl<B> FromRequest<B> for User
+impl<S> FromRequestParts<S> for User
 where
-    B: axum::body::HttpBody + Send,
+    S: Send + Sync,
 {
     type Rejection = Error;
 
-    async fn from_request(req: &mut RequestParts<B>) -> std::result::Result<Self, Self::Rejection> {
-        let authorization_header = TypedHeader::<Authorization<Basic>>::from_request(req).await?;
-        let pool = Extension::<PgPool>::from_request(req)
+    async fn from_request_parts(parts: &mut Parts, state: &S) -> Result<Self> {
+        let authorization_header =
+            TypedHeader::<Authorization<Basic>>::from_request_parts(parts, state).await?;
+        let pool = Extension::<PgPool>::from_request_parts(parts, state)
             .await
             .expect("missing pool extension");
         Ok(Self::get_by_name_and_password(

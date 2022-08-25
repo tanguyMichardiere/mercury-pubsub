@@ -1,26 +1,27 @@
 use axum::body::HttpBody;
-use axum::extract::{FromRequest, RequestParts};
-use axum::BoxError;
-use axum::{async_trait, Json};
+use axum::extract::FromRequest;
+use axum::{async_trait, BoxError, Json};
+use hyper::Request;
 use serde::de::DeserializeOwned;
 use validator::Validate;
 
-use error::Error;
+use error::{Error, Result};
 
 pub(crate) struct ValidatedJson<T>(pub(crate) T);
 
 #[async_trait]
-impl<T, B> FromRequest<B> for ValidatedJson<T>
+impl<T, S, B> FromRequest<S, B> for ValidatedJson<T>
 where
     T: DeserializeOwned + Validate,
-    B: HttpBody + Send,
+    B: HttpBody + Send + 'static,
     B::Data: Send,
     B::Error: Into<BoxError>,
+    S: Send + Sync,
 {
     type Rejection = Error;
 
-    async fn from_request(req: &mut RequestParts<B>) -> Result<Self, Self::Rejection> {
-        let Json(value) = Json::<T>::from_request(req).await?;
+    async fn from_request(req: Request<B>, state: &S) -> Result<Self> {
+        let Json(value) = Json::<T>::from_request(req, state).await?;
         value.validate()?;
         Ok(Self(value))
     }
@@ -32,6 +33,8 @@ mod error {
     use hyper::StatusCode;
     use tracing::debug;
     use validator::ValidationErrors;
+
+    pub(crate) type Result<T> = std::result::Result<T, Error>;
 
     #[derive(Debug, thiserror::Error)]
     pub(crate) enum Error {

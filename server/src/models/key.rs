@@ -1,6 +1,7 @@
-use axum::extract::{FromRequest, RequestParts};
+use axum::extract::FromRequestParts;
 use axum::headers::authorization::Bearer;
 use axum::headers::Authorization;
+use axum::http::request::Parts;
 use axum::{async_trait, Extension, TypedHeader};
 use serde::{Deserialize, Serialize};
 use sqlx::{PgPool, Postgres, QueryBuilder};
@@ -47,8 +48,6 @@ pub(crate) struct Key {
     #[serde(skip_serializing)]
     hash: String,
 }
-
-trait KeyTypeTrait {}
 
 /// CRUD
 impl Key {
@@ -172,22 +171,22 @@ impl Key {
 }
 
 #[async_trait]
-impl<B> FromRequest<B> for Key
+impl<S> FromRequestParts<S> for Key
 where
-    B: axum::body::HttpBody + Send,
+    S: Send + Sync,
 {
     type Rejection = Error;
 
     /// Parse the Authorization header, expecting a token containing the key's id and secret
     /// separated by a semi-colon and returning the key directly
-    async fn from_request(req: &mut RequestParts<B>) -> Result<Self> {
+    async fn from_request_parts(parts: &mut Parts, state: &S) -> Result<Self> {
         let authorization_header_value =
-            TypedHeader::<Authorization<Bearer>>::from_request(req).await?;
+            TypedHeader::<Authorization<Bearer>>::from_request_parts(parts, state).await?;
         let token = authorization_header_value.token();
         let (id, secret) = token.split_once(';').ok_or(Error::MissingSemiColon)?;
         let id = Uuid::try_parse(id).map_err(|_| Error::InvalidKeyId)?;
         let secret = Secret(secret.to_owned());
-        let Extension(pool) = Extension::<PgPool>::from_request(req)
+        let Extension(pool) = Extension::<PgPool>::from_request_parts(parts, state)
             .await
             .expect("missing pool extension");
         let key = Key::get(&pool, id).await?;
