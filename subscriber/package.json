@@ -26,8 +26,7 @@
     "format": "prettier -w src",
     "check-format": "prettier --check src",
     "lint": "eslint src",
-    "build": "tsc",
-    "deploy": "echo deploy subscriber"
+    "build": "tsc"
   },
   "dependencies": {
     "@microsoft/fetch-event-source": "2.0.1"

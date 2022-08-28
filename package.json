@@ -32,7 +32,7 @@
     "lint": "turbo run lint",
     "build": "turbo run build",
     "test": "turbo run test",
-    "deploy": "turbo run deploy"
+    "publish": "turbo run publish"
   },
   "devDependencies": {
     "npm-check-updates": "16.0.6",

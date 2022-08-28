@@ -29,8 +29,7 @@
     "format": "prettier -w src",
     "check-format": "prettier --check src",
     "lint": "eslint src",
-    "build": "tsc",
-    "deploy": "echo deploy admin"
+    "build": "tsc"
   },
   "dependencies": {
     "whatwg-fetch": "3.6.2"
