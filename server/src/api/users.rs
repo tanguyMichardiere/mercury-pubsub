@@ -1,21 +1,21 @@
-use axum::extract::Path;
+use axum::extract::{Path, State};
 use axum::routing::{delete, get, patch};
-use axum::{Extension, Json, Router};
+use axum::{Json, Router};
 use hyper::StatusCode;
 use serde::Deserialize;
-use sqlx::PgPool;
 use tracing::instrument;
 use uuid::Uuid;
 use validator::Validate;
 
 use crate::api::extract::validated_json::ValidatedJson;
 use crate::models::user::User;
+use crate::state::SharedState;
 
 use error::{Error, Result};
 
-pub(crate) fn app() -> Router {
-    Router::new()
-        .route("/", get(list_users).post(create_user).delete(delete_self))
+pub(crate) fn app(state: SharedState) -> Router<SharedState> {
+    Router::with_state(state)
+        .route("/", get(list_users).post(create_user))
         .route("/rename", patch(rename))
         .route("/change-password", patch(change_password))
         .route("/:id", delete(delete_user))
@@ -23,10 +23,10 @@ pub(crate) fn app() -> Router {
 
 /// Get self and all lower ranked users.
 #[instrument]
-async fn list_users(Extension(pool): Extension<PgPool>, user: User) -> Result<Json<Vec<User>>> {
+async fn list_users(State(state): State<SharedState>, user: User) -> Result<Json<Vec<User>>> {
     let min_rank = user.rank + 1;
     let mut users = vec![user];
-    users.append(&mut User::get_all(&pool, min_rank).await?);
+    users.append(&mut User::get_all(&state.read().await.pool, min_rank).await?);
     Ok(Json(users))
 }
 
@@ -44,13 +44,21 @@ struct CreateUserBody {
 /// The new user's rank will be equal to its parent user's rank + 1.
 #[instrument]
 async fn create_user(
-    Extension(pool): Extension<PgPool>,
+    State(state): State<SharedState>,
     user: User,
     ValidatedJson(body): ValidatedJson<CreateUserBody>,
 ) -> Result<(StatusCode, Json<User>)> {
     Ok((
         StatusCode::CREATED,
-        Json(User::new(&pool, &body.name, &body.password, user.rank + 1).await?),
+        Json(
+            User::new(
+                &state.read().await.pool,
+                &body.name,
+                &body.password,
+                user.rank + 1,
+            )
+            .await?,
+        ),
     ))
 }
 
@@ -64,11 +72,11 @@ struct RenameBody {
 /// Rename self.
 #[instrument]
 async fn rename(
-    Extension(pool): Extension<PgPool>,
+    State(state): State<SharedState>,
     mut user: User,
     ValidatedJson(body): ValidatedJson<RenameBody>,
 ) -> Result<Json<User>> {
-    user.rename(&pool, &body.name).await?;
+    user.rename(&state.read().await.pool, &body.name).await?;
     Ok(Json(user))
 }
 
@@ -82,35 +90,25 @@ struct ChangePasswordBody {
 /// Change own password.
 #[instrument]
 async fn change_password(
-    Extension(pool): Extension<PgPool>,
+    State(state): State<SharedState>,
     mut user: User,
     ValidatedJson(body): ValidatedJson<ChangePasswordBody>,
 ) -> Result<Json<User>> {
-    user.change_password(&pool, &body.password).await?;
+    user.change_password(&state.read().await.pool, &body.password)
+        .await?;
     Ok(Json(user))
-}
-
-/// Delete self.
-#[instrument]
-async fn delete_self(Extension(pool): Extension<PgPool>, user: User) -> Result<StatusCode> {
-    if user.rank > 0 {
-        user.delete(&pool).await?;
-        Ok(StatusCode::NO_CONTENT)
-    } else {
-        Err(Error::DeleteRootUser)
-    }
 }
 
 /// Delete a user.
 #[instrument]
 async fn delete_user(
-    Extension(pool): Extension<PgPool>,
+    State(state): State<SharedState>,
     user: User,
     Path(id): Path<Uuid>,
 ) -> Result<StatusCode> {
-    let other_user = User::get(&pool, id).await?;
+    let other_user = User::get(&state.read().await.pool, id).await?;
     if other_user.rank > user.rank {
-        other_user.delete(&pool).await?;
+        other_user.delete(&state.read().await.pool).await?;
         Ok(StatusCode::NO_CONTENT)
     } else {
         Err(Error::HigherRankUser)
@@ -132,8 +130,6 @@ mod error {
         UserError(#[from] user::error::Error),
         #[error("Cannot delete a higher ranked user")]
         HigherRankUser,
-        #[error("Cannot delete the root user")]
-        DeleteRootUser,
     }
 
     impl IntoResponse for Error {
@@ -143,9 +139,6 @@ mod error {
                 Error::UserError(error) => error.into_response(),
                 Error::HigherRankUser => {
                     (StatusCode::UNAUTHORIZED, self.to_string()).into_response()
-                }
-                Error::DeleteRootUser => {
-                    (StatusCode::BAD_REQUEST, self.to_string()).into_response()
                 }
             }
         }

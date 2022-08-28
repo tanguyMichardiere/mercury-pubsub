@@ -1,13 +1,15 @@
-use axum::extract::FromRequestParts;
+use axum::extract::{FromRef, FromRequestParts};
 use axum::headers::authorization::Basic;
 use axum::headers::Authorization;
 use axum::http::request::Parts;
-use axum::{async_trait, Extension, TypedHeader};
+use axum::{async_trait, TypedHeader};
 use serde::Serialize;
 use sqlx::PgPool;
 use uuid::Uuid;
 
 use error::{Error, Result};
+
+use crate::state::SharedState;
 
 /// An application user.
 #[derive(Debug, Serialize)]
@@ -154,21 +156,21 @@ impl User {
 impl<S> FromRequestParts<S> for User
 where
     S: Send + Sync,
+    SharedState: FromRef<S>,
 {
     type Rejection = Error;
 
     async fn from_request_parts(parts: &mut Parts, state: &S) -> Result<Self> {
         let authorization_header =
             TypedHeader::<Authorization<Basic>>::from_request_parts(parts, state).await?;
-        let pool = Extension::<PgPool>::from_request_parts(parts, state)
-            .await
-            .expect("missing pool extension");
-        Ok(Self::get_by_name_and_password(
-            &pool,
+        let state = SharedState::from_ref(state);
+        let user = Self::get_by_name_and_password(
+            &state.read().await.pool,
             authorization_header.username(),
             authorization_header.password(),
         )
-        .await?)
+        .await?;
+        Ok(user)
     }
 }
 

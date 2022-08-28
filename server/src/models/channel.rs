@@ -118,42 +118,6 @@ impl Channel {
         .collect())
     }
 
-    /// Rename the channel.
-    pub(crate) async fn rename(&mut self, pool: &PgPool, name: &str) -> Result<()> {
-        self.name = sqlx::query_scalar!(
-            r#"
-            UPDATE "Channel"
-                SET name = $1
-                WHERE id = $2
-            RETURNING name
-            "#,
-            name,
-            self.id,
-        )
-        .fetch_one(pool)
-        .await?;
-        Ok(())
-    }
-
-    /// Change the channel's schema.
-    pub(crate) async fn change_schema(&mut self, pool: &PgPool, schema: &Value) -> Result<()> {
-        self.schema = sqlx::query_scalar!(
-            r#"
-            UPDATE "Channel"
-                SET schema = $1
-                WHERE id = $2
-            RETURNING schema
-            "#,
-            schema,
-            self.id,
-        )
-        .fetch_one(pool)
-        .await?;
-        self.compiled_schema =
-            JSONSchema::compile(&self.schema).expect("invalid schema in database");
-        Ok(())
-    }
-
     /// Delete the channel.
     pub(crate) async fn delete(self, pool: &PgPool) -> Result<()> {
         sqlx::query!(

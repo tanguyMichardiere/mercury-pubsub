@@ -1,83 +1,70 @@
-use axum::extract::Path;
+use axum::extract::{Path, State};
 use axum::routing::get;
-use axum::{Extension, Json, Router};
+use axum::{Json, Router};
 use hyper::StatusCode;
 use serde::Deserialize;
-use sqlx::PgPool;
 use tracing::instrument;
 use uuid::Uuid;
 
 use crate::models::channel::Channel;
 use crate::models::key::{Key, KeyType};
 use crate::models::user::User;
+use crate::state::SharedState;
 
 use error::Result;
 
-pub(crate) fn app() -> Router {
-    Router::new()
+pub(crate) fn app(state: SharedState) -> Router<SharedState> {
+    Router::with_state(state)
         .route("/", get(list_keys).post(create_key))
-        .route(
-            "/:id",
-            get(list_channels).patch(edit_channels).delete(delete_key),
-        )
+        .route("/:id", get(list_channels).delete(delete_key))
 }
 
 /// Get all keys.
 #[instrument]
-async fn list_keys(Extension(pool): Extension<PgPool>, user: User) -> Result<Json<Vec<Key>>> {
-    Ok(Json(Key::get_all(&pool).await?))
+async fn list_keys(State(state): State<SharedState>, user: User) -> Result<Json<Vec<Key>>> {
+    Ok(Json(Key::get_all(&state.read().await.pool).await?))
 }
 
 #[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
 struct CreateKeyBody {
     r#type: KeyType,
+    channels: Vec<Uuid>,
 }
 
 /// Create a key.
 #[instrument]
 async fn create_key(
-    Extension(pool): Extension<PgPool>,
+    State(state): State<SharedState>,
     user: User,
     Json(body): Json<CreateKeyBody>,
 ) -> Result<String> {
-    let (key, secret) = Key::new(&pool, body.r#type).await?;
+    // TODO: next 2 instructions in 1 method
+    let (key, secret) = Key::new(&state.read().await.pool, body.r#type, body.channels).await?;
     Ok(format!("{};{}", key.id, secret.as_ref()))
 }
 
 /// Get all channels that a key authorizes.
 #[instrument]
 async fn list_channels(
-    Extension(pool): Extension<PgPool>,
+    State(state): State<SharedState>,
     user: User,
     Path(id): Path<Uuid>,
 ) -> Result<Json<Vec<Channel>>> {
-    let key = Key::get(&pool, id).await?;
-    Ok(Json(Channel::get_from_key(&pool, &key).await?))
-}
-
-/// Set the channels that a key authorizes.
-#[instrument]
-async fn edit_channels(
-    Extension(pool): Extension<PgPool>,
-    user: User,
-    Path(id): Path<Uuid>,
-    Json(body): Json<Vec<Uuid>>,
-) -> Result<()> {
-    let key = Key::get(&pool, id).await?;
-    key.set_channels(&pool, body).await?;
-    Ok(())
+    let key = Key::get(&state.read().await.pool, id).await?;
+    Ok(Json(
+        Channel::get_from_key(&state.read().await.pool, &key).await?,
+    ))
 }
 
 /// Delete a key.
 #[instrument]
 async fn delete_key(
-    Extension(pool): Extension<PgPool>,
+    State(state): State<SharedState>,
     user: User,
     Path(id): Path<Uuid>,
 ) -> Result<StatusCode> {
-    let key = Key::get(&pool, id).await?;
-    key.delete(&pool).await?;
+    let key = Key::get(&state.read().await.pool, id).await?;
+    key.delete(&state.read().await.pool).await?;
     Ok(StatusCode::NO_CONTENT)
 }
 

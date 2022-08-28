@@ -1,23 +1,27 @@
-pub mod config;
-
 pub(crate) mod api;
+pub mod config;
 mod health;
 pub(crate) mod models;
 pub(crate) mod senders;
 pub(crate) mod sse;
+mod state;
+
+use std::sync::Arc;
 
 use axum::routing::get;
-use axum::{Extension, Router};
+use axum::Router;
 use sqlx::postgres::PgPoolOptions;
 use sqlx::PgPool;
 use tower_http::trace::TraceLayer;
 
-pub fn app(pool: PgPool) -> Router {
-    Router::new()
+use crate::state::{AppState, SharedState};
+
+pub fn app(pool: PgPool) -> Router<SharedState> {
+    let state = AppState::new(pool);
+    Router::with_state(Arc::clone(&state))
         .route("/health", get(health::health))
-        .nest("/api", api::app())
-        .nest("/sse", sse::app())
-        .layer(Extension(pool))
+        .nest("/api", api::app(Arc::clone(&state)))
+        .nest("/sse", sse::app(Arc::clone(&state)))
         .layer(TraceLayer::new_for_http())
 }
 

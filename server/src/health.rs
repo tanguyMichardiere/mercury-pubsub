@@ -1,15 +1,16 @@
-use axum::Extension;
-use sqlx::PgPool;
+use axum::extract::State;
 use tracing::instrument;
 
 use error::Result;
 
+use crate::state::SharedState;
+
 /// Check that the database connexion works, and that all migrations are successfully applied.
 #[instrument]
-pub(crate) async fn health(Extension(pool): Extension<PgPool>) -> Result<()> {
+pub(crate) async fn health(State(state): State<SharedState>) -> Result<()> {
     assert_eq!(
         sqlx::query_scalar!(r#"SELECT COUNT(*) FROM "_sqlx_migrations""#)
-            .fetch_one(&pool)
+            .fetch_one(&state.read().await.pool)
             .await?
             .expect("NULL from SELECT scalar"),
         4
@@ -21,7 +22,7 @@ pub(crate) async fn health(Extension(pool): Extension<PgPool>) -> Result<()> {
                 WHERE success = false
             "#
         )
-        .fetch_one(&pool)
+        .fetch_one(&state.read().await.pool)
         .await?
         .expect("NULL from SELECT scalar"),
         0

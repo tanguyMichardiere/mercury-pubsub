@@ -1,11 +1,10 @@
-use axum::extract::Path;
-use axum::routing::{delete, get, patch};
-use axum::{Extension, Json, Router};
+use axum::extract::{Path, State};
+use axum::routing::{delete, get};
+use axum::{Json, Router};
 use hyper::StatusCode;
 use jsonschema::JSONSchema;
 use serde::Deserialize;
 use serde_json::Value;
-use sqlx::PgPool;
 use tracing::instrument;
 use uuid::Uuid;
 use validator::{Validate, ValidationError};
@@ -13,14 +12,13 @@ use validator::{Validate, ValidationError};
 use crate::api::extract::validated_json::ValidatedJson;
 use crate::models::channel::Channel;
 use crate::models::user::User;
+use crate::state::SharedState;
 
 use error::Result;
 
-pub(crate) fn app() -> Router {
-    Router::new()
+pub(crate) fn app(state: SharedState) -> Router<SharedState> {
+    Router::with_state(state)
         .route("/", get(list_channels).post(create_channel))
-        .route("/rename/:id", patch(rename_channel))
-        .route("/change-schema/:id", patch(change_schema))
         .route("/:id", delete(delete_channel))
 }
 
@@ -34,11 +32,8 @@ fn validate_schema(schema: &Value) -> std::result::Result<(), ValidationError> {
 
 /// Get all channels.
 #[instrument]
-async fn list_channels(
-    Extension(pool): Extension<PgPool>,
-    user: User,
-) -> Result<Json<Vec<Channel>>> {
-    Ok(Json(Channel::get_all(&pool).await?))
+async fn list_channels(State(state): State<SharedState>, user: User) -> Result<Json<Vec<Channel>>> {
+    Ok(Json(Channel::get_all(&state.read().await.pool).await?))
 }
 
 #[derive(Debug, Deserialize, Validate)]
@@ -52,60 +47,24 @@ struct CreateChannelBody {
 /// Create a channel.
 #[instrument]
 async fn create_channel(
-    Extension(pool): Extension<PgPool>,
+    State(state): State<SharedState>,
     user: User,
     ValidatedJson(body): ValidatedJson<CreateChannelBody>,
 ) -> Result<Json<Channel>> {
-    Ok(Json(Channel::new(&pool, &body.name, &body.schema).await?))
-}
-
-#[derive(Debug, Deserialize, Validate)]
-struct RenameChannelBody {
-    #[validate(length(min = 4, max = 16))]
-    name: String,
-}
-
-/// Rename a channel.
-#[instrument]
-async fn rename_channel(
-    Extension(pool): Extension<PgPool>,
-    user: User,
-    Path(id): Path<Uuid>,
-    ValidatedJson(body): ValidatedJson<RenameChannelBody>,
-) -> Result<Json<Channel>> {
-    let mut channel = Channel::get(&pool, id).await?;
-    channel.rename(&pool, &body.name).await?;
-    Ok(Json(channel))
-}
-
-#[derive(Debug, Deserialize, Validate)]
-struct ChangeSchemaBody {
-    #[validate(custom = "validate_schema")]
-    schema: Value,
-}
-
-/// Change a channel's schema.
-#[instrument]
-async fn change_schema(
-    Extension(pool): Extension<PgPool>,
-    user: User,
-    Path(id): Path<Uuid>,
-    ValidatedJson(body): ValidatedJson<ChangeSchemaBody>,
-) -> Result<Json<Channel>> {
-    let mut channel = Channel::get(&pool, id).await?;
-    channel.change_schema(&pool, &body.schema).await?;
-    Ok(Json(channel))
+    Ok(Json(
+        Channel::new(&state.read().await.pool, &body.name, &body.schema).await?,
+    ))
 }
 
 /// Delete a channel.
 #[instrument]
 async fn delete_channel(
-    Extension(pool): Extension<PgPool>,
+    State(state): State<SharedState>,
     user: User,
     Path(id): Path<Uuid>,
 ) -> Result<StatusCode> {
-    let channel = Channel::get(&pool, id).await?;
-    channel.delete(&pool).await?;
+    let channel = Channel::get(&state.read().await.pool, id).await?;
+    channel.delete(&state.read().await.pool).await?;
     Ok(StatusCode::NO_CONTENT)
 }
 

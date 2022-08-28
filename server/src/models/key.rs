@@ -1,13 +1,14 @@
-use axum::extract::FromRequestParts;
+use axum::extract::{FromRef, FromRequestParts};
 use axum::headers::authorization::Bearer;
 use axum::headers::Authorization;
 use axum::http::request::Parts;
-use axum::{async_trait, Extension, TypedHeader};
+use axum::{async_trait, TypedHeader};
 use serde::{Deserialize, Serialize};
 use sqlx::{PgPool, Postgres, QueryBuilder};
 use uuid::Uuid;
 
 use crate::models::channel::Channel;
+use crate::state::SharedState;
 
 use error::{Error, Result};
 
@@ -55,7 +56,11 @@ impl Key {
     ///
     /// Returns the key and its secret. The secret will only be returned once, when the key is
     /// created.
-    pub(crate) async fn new(pool: &PgPool, r#type: KeyType) -> Result<(Self, Secret)> {
+    pub(crate) async fn new(
+        pool: &PgPool,
+        r#type: KeyType,
+        channel_ids: Vec<Uuid>,
+    ) -> Result<(Self, Secret)> {
         let secret = Secret::new(pool).await?;
         let key = sqlx::query_as!(
             Self,
@@ -69,6 +74,12 @@ impl Key {
         )
         .fetch_one(pool)
         .await?;
+        let mut query =
+            QueryBuilder::<Postgres>::new(r#"INSERT INTO "Access" (key_id, channel_id) "#);
+        query.push_values(channel_ids, |mut b, channel_id| {
+            b.push_bind(key.id).push_bind(channel_id);
+        });
+        query.build().execute(pool).await?;
         Ok((key, secret))
     }
 
@@ -104,26 +115,6 @@ impl Key {
                 .fetch_all(pool)
                 .await?,
         )
-    }
-
-    /// Set the channels the key authorizes.
-    pub(crate) async fn set_channels(&self, pool: &PgPool, ids: Vec<Uuid>) -> Result<()> {
-        sqlx::query!(
-            r#"
-            DELETE FROM "Access"
-                WHERE key_id = $1
-            "#,
-            self.id,
-        )
-        .execute(pool)
-        .await?;
-        let mut query =
-            QueryBuilder::<Postgres>::new(r#"INSERT INTO "Access" (key_id, channel_id) "#);
-        query.push_values(ids, |mut b, channel_id| {
-            b.push_bind(self.id).push_bind(channel_id);
-        });
-        query.build().execute(pool).await?;
-        Ok(())
     }
 
     /// Delete the key.
@@ -174,6 +165,7 @@ impl Key {
 impl<S> FromRequestParts<S> for Key
 where
     S: Send + Sync,
+    SharedState: FromRef<S>,
 {
     type Rejection = Error;
 
@@ -186,11 +178,9 @@ where
         let (id, secret) = token.split_once(';').ok_or(Error::MissingSemiColon)?;
         let id = Uuid::try_parse(id).map_err(|_| Error::InvalidKeyId)?;
         let secret = Secret(secret.to_owned());
-        let Extension(pool) = Extension::<PgPool>::from_request_parts(parts, state)
-            .await
-            .expect("missing pool extension");
-        let key = Key::get(&pool, id).await?;
-        if key.check_secret(&pool, &secret).await? {
+        let state = SharedState::from_ref(state);
+        let key = Key::get(&state.read().await.pool, id).await?;
+        if key.check_secret(&state.read().await.pool, &secret).await? {
             Ok(key)
         } else {
             Err(Error::InvalidSecretKey)
