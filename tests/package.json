@@ -1,5 +1,5 @@
 {
-  "name": "tests",
+  "name": "@mercury-pubsub/tests",
   "version": "0.1.0",
   "author": "Tanguy Michardière",
   "license": "ISC",
