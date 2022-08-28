@@ -1,4 +1,4 @@
-# mercury-pubsub/server
+# @mercury-pubsub/server
 
 ## Configuration
 

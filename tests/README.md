@@ -1,1 +1,1 @@
-# mercury-pubsub/tests
+# @mercury-pubsub/tests
