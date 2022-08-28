@@ -1,0 +1,56 @@
+{
+  "name": "@mercury-pubsub/admin",
+  "version": "0.1.0",
+  "description": "Self-deployable Server-Sent Events service with schema validation",
+  "author": "Tanguy Michardière",
+  "license": "ISC",
+  "keywords": [
+    "mercury-pubsub",
+    "mercury",
+    "publisher",
+    "subscriber",
+    "pusher",
+    "websockets"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mercury-pubsub/mercury.git"
+  },
+  "homepage": "https://github.com/mercury-pubsub/mercury/admin#readme",
+  "bugs": {
+    "url": "https://github.com/mercury-pubsub/mercury/issues"
+  },
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "bin": {
+    "mercury": "dist/bin.js"
+  },
+  "scripts": {
+    "format": "prettier -w src",
+    "check-format": "prettier --check src",
+    "lint": "eslint src",
+    "build": "tsc",
+    "deploy": "echo deploy admin"
+  },
+  "dependencies": {
+    "whatwg-fetch": "3.6.2"
+  },
+  "devDependencies": {
+    "@trivago/prettier-plugin-sort-imports": "3.3.0",
+    "@types/node": "18.6.4",
+    "@types/whatwg-fetch": "0.0.33",
+    "@types/yargs": "17.0.11",
+    "@typescript-eslint/eslint-plugin": "5.32.0",
+    "@typescript-eslint/parser": "5.32.0",
+    "dotenv": "16.0.1",
+    "eslint": "8.21.0",
+    "eslint-config-prettier": "8.5.0",
+    "eslint-plugin-tsdoc": "0.2.16",
+    "json-schema-to-zod": "0.1.5",
+    "prettier": "2.7.1",
+    "tslib": "2.4.0",
+    "typescript": "4.7.4",
+    "yargs": "17.5.1",
+    "zod": "3.18.0"
+  }
+}
