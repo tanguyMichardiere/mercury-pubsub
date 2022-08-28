@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "description": "Self-deployable Server-Sent Events service with schema validation",
   "author": "Tanguy Michardière",
-  "license": "ISC",
+  "license": "MIT",
   "keywords": [
     "mercury-pubsub",
     "mercury",
