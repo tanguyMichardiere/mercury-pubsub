@@ -1,6 +1,6 @@
 {
   "name": "@mercury-pubsub/admin",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Self-deployable Server-Sent Events service with schema validation",
   "author": "Tanguy Michardière",
   "license": "MIT",
@@ -30,7 +30,7 @@
     "check-format": "prettier --check src",
     "lint": "eslint src",
     "build": "tsc",
-    "deploy": "npm publish --public"
+    "deploy": "npm publish --access public"
   },
   "dependencies": {
     "whatwg-fetch": "3.6.2"

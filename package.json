@@ -32,7 +32,10 @@
     "lint": "turbo run lint",
     "build": "turbo run build",
     "test": "turbo run test",
-    "deploy": "turbo run deploy"
+    "deploy": "turbo run deploy",
+    "version:patch": "npm version --workspaces patch && cd server && cargo set-version --bump patch",
+    "version:minor": "npm version --workspaces minor && cd server && cargo set-version --bump minor",
+    "version:major": "npm version --workspaces major && cd server && cargo set-version --bump major"
   },
   "devDependencies": {
     "npm-check-updates": "16.0.6",
