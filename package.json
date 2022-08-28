@@ -24,7 +24,8 @@
     "admin",
     "publisher",
     "subscriber",
-    "tests"
+    "tests",
+    "examples/*"
   ],
   "scripts": {
     "format": "turbo run format",
