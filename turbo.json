@@ -1,0 +1,19 @@
+{
+  "$schema": "https://turborepo.org/schema.json",
+  "pipeline": {
+    "format": {},
+    "check-format": {},
+    "lint": {},
+    "build": {
+      "dependsOn": ["^build"],
+      "outputs": ["dist/**"]
+    },
+    "test": {
+      "dependsOn": ["build"],
+      "inputs": ["src/**/*.test.tsx", "src/**/*.test.ts"]
+    },
+    "deploy": {
+      "dependsOn": ["check-format", "lint", "build", "test"]
+    }
+  }
+}

@@ -1,0 +1,40 @@
+{
+  "name": "mercury-pubsub",
+  "version": "0.1.0",
+  "description": "Self-deployable Server-Sent Events service with schema validation",
+  "author": "Tanguy Michardière",
+  "license": "ISC",
+  "keywords": [
+    "mercury-pubsub",
+    "mercury",
+    "publisher",
+    "subscriber",
+    "pusher",
+    "websockets"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mercury-pubsub/mercury.git"
+  },
+  "homepage": "https://github.com/mercury-pubsub/mercury#readme",
+  "bugs": {
+    "url": "https://github.com/mercury-pubsub/mercury/issues"
+  },
+  "workspaces": [
+    "admin",
+    "publisher",
+    "subscriber",
+    "tests"
+  ],
+  "scripts": {
+    "format": "turbo run format",
+    "check-format": "turbo run check-format",
+    "lint": "turbo run lint",
+    "build": "turbo run build",
+    "test": "turbo run test",
+    "deploy": "turbo run deploy"
+  },
+  "devDependencies": {
+    "turbo": "1.4.3"
+  }
+}
