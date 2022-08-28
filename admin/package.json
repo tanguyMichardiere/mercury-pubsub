@@ -30,7 +30,7 @@
     "check-format": "prettier --check src",
     "lint": "eslint src",
     "build": "tsc",
-    "deploy": "npm publish"
+    "deploy": "npm publish --public"
   },
   "dependencies": {
     "whatwg-fetch": "3.6.2"

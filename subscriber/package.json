@@ -27,7 +27,7 @@
     "check-format": "prettier --check src",
     "lint": "eslint src",
     "build": "tsc",
-    "deploy": "npm publish"
+    "deploy": "npm publish --public"
   },
   "dependencies": {
     "@microsoft/fetch-event-source": "2.0.1"
