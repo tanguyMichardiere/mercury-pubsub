@@ -12,9 +12,9 @@
     "test": "jest"
   },
   "dependencies": {
-    "@mercury-pubsub/admin": "../admin",
-    "@mercury-pubsub/publisher": "../publisher",
-    "@mercury-pubsub/subscriber": "../subscriber"
+    "@mercury-pubsub/admin": "*",
+    "@mercury-pubsub/publisher": "*",
+    "@mercury-pubsub/subscriber": "*"
   },
   "devDependencies": {
     "@babel/preset-env": "7.18.10",

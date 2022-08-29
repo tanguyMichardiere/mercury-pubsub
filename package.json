@@ -1,6 +1,6 @@
 {
   "name": "mercury-pubsub",
-  "version": "0.1.0",
+  "version": "0.1.2",
   "description": "Self-deployable Server-Sent Events service with schema validation",
   "author": "Tanguy Michardière",
   "license": "MIT",
@@ -34,12 +34,12 @@
     "lint": "turbo run lint",
     "build": "turbo run build",
     "test": "turbo run test",
-    "deploy": "turbo run deploy",
     "version:patch": "npm version --workspaces patch && cd server && cargo set-version --bump patch",
     "version:minor": "npm version --workspaces minor && cd server && cargo set-version --bump minor",
     "version:major": "npm version --workspaces major && cd server && cargo set-version --bump major"
   },
   "devDependencies": {
+    "lerna": "5.4.3",
     "npm-check-updates": "16.0.6",
     "turbo": "1.4.3"
   }

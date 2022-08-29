@@ -17,10 +17,6 @@
     "test": {
       "dependsOn": ["build"],
       "outputs": []
-    },
-    "deploy": {
-      "dependsOn": ["check-format", "lint", "build", "test"],
-      "outputs": []
     }
   }
 }
