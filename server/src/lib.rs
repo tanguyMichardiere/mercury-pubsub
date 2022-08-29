@@ -23,7 +23,13 @@ pub fn app(pool: PgPool) -> Router<SharedState> {
         .route("/health", get(health::health))
         .nest("/api", api::app(Arc::clone(&state)))
         .nest("/sse", sse::app(Arc::clone(&state)))
-        .layer(CorsLayer::new().allow_origin(Any))
+        .layer(
+            CorsLayer::new()
+                .allow_origin(Any)
+                .allow_credentials(true)
+                .allow_methods(Any)
+                .allow_headers(Any),
+        )
         .layer(TraceLayer::new_for_http())
 }
 
