@@ -5,12 +5,15 @@ import type { NextPage } from "next";
 import { useSubscribe } from "@mercury-pubsub/subscriber/react";
 
 const Home: NextPage = () => {
-  const [messages, setMessages] = useState<Array<string>>([]);
+  const [messages, setMessages] = useState<Array<[Date, string]>>([]);
 
   useSubscribe("messages", {
+    async onopen(response) {
+      console.log(response);
+    },
     ondata(data) {
       if (typeof data === "string") {
-        setMessages((messages) => [...messages, data]);
+        setMessages((messages) => [...messages, [new Date(), data]]);
       }
     },
   });
@@ -19,8 +22,10 @@ const Home: NextPage = () => {
 
   return (
     <div>
-      {messages.map((message) => (
-        <p key={message}>{message}</p>
+      {messages.map(([sentAt, message]) => (
+        <p key={sentAt.getTime()}>
+          {sentAt.toISOString()} {message}
+        </p>
       ))}
       <form
         onSubmit={function (event) {
@@ -30,7 +35,7 @@ const Home: NextPage = () => {
               setMessage("");
               return response.json();
             })
-            .then((count) => console.log(`seen by ${count} others`));
+            .then((count) => console.log(`seen by ${count} people`));
         }}
       >
         <input

@@ -1,9 +1,7 @@
 import type { EventSourceMessage, FetchEventSourceInit } from "@microsoft/fetch-event-source";
 import { fetchEventSource } from "@microsoft/fetch-event-source";
 
-export interface Channels {
-  [key: string]: unknown;
-}
+export type Channels = Record<string, unknown>;
 
 export type SubscribeOptions<C extends keyof Channels> = Pick<
   FetchEventSourceInit,
