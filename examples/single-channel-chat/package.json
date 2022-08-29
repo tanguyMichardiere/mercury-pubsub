@@ -1,6 +1,6 @@
 {
   "name": "@mercury-pubsub/single-channel-chat",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "private": true,
   "author": "Tanguy Michardière",
   "license": "MIT",
@@ -13,6 +13,8 @@
     "start": "next start"
   },
   "dependencies": {
+    "@mercury-pubsub/publisher": "../../publisher",
+    "@mercury-pubsub/subscriber": "../../subscriber",
     "next": "12.2.5",
     "react": "18.2.0",
     "react-dom": "18.2.0"
