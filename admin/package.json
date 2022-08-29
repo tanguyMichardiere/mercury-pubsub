@@ -25,7 +25,6 @@
   "bin": {
     "mercury": "dist/bin.mjs"
   },
-  "type": "module",
   "scripts": {
     "format": "prettier -w src",
     "check-format": "prettier --check src",
@@ -50,8 +49,5 @@
     "typescript": "4.8.2",
     "yargs": "17.5.1",
     "zod": "3.18.0"
-  },
-  "dependencies": {
-    "node-fetch": "3.2.10"
   }
 }
