@@ -12,6 +12,7 @@ use axum::routing::get;
 use axum::Router;
 use sqlx::postgres::PgPoolOptions;
 use sqlx::PgPool;
+use tower_http::cors::{Any, CorsLayer};
 use tower_http::trace::TraceLayer;
 
 use crate::state::{AppState, SharedState};
@@ -22,6 +23,7 @@ pub fn app(pool: PgPool) -> Router<SharedState> {
         .route("/health", get(health::health))
         .nest("/api", api::app(Arc::clone(&state)))
         .nest("/sse", sse::app(Arc::clone(&state)))
+        .layer(CorsLayer::new().allow_origin(Any))
         .layer(TraceLayer::new_for_http())
 }
 
