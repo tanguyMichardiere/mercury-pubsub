@@ -1,5 +1,5 @@
 {
-  "name": "@mercury-pubsub/single-channel-chat",
+  "name": "single-channel-chat",
   "version": "0.1.4",
   "private": true,
   "author": "Tanguy Michardière",
