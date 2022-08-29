@@ -1,6 +1,6 @@
 {
   "name": "@mercury-pubsub/publisher",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "Self-deployable Server-Sent Events service with schema validation",
   "author": "Tanguy Michardière",
   "license": "MIT",
@@ -29,7 +29,7 @@
     "build": "tsc"
   },
   "devDependencies": {
-    "@mercury-pubsub/types": "*",
+    "@mercury-pubsub/types": "^0.1.3",
     "@trivago/prettier-plugin-sort-imports": "3.3.0",
     "@types/node": "18.7.13",
     "@typescript-eslint/eslint-plugin": "5.35.1",
