@@ -47,7 +47,18 @@ function userCommands(yargs: Argv) {
           return yargs.positional("name", { type: "string" }).demandOption("name");
         },
         async function (argv) {
-          console.log(await mercury.user.rename(argv.name));
+          await mercury.user.rename(argv.name);
+        }
+      )
+      // user.changePassword
+      .command(
+        "change-password [password]",
+        "change password",
+        function (yargs) {
+          return yargs.positional("password", { type: "string" }).demandOption("password");
+        },
+        async function (argv) {
+          await mercury.user.changePassword(argv.password);
         }
       )
       // user.delete
