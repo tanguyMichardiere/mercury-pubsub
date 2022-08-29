@@ -26,7 +26,6 @@ pub fn app(pool: PgPool) -> Router<SharedState> {
         .layer(
             CorsLayer::new()
                 .allow_origin(Any)
-                .allow_credentials(true)
                 .allow_methods(Any)
                 .allow_headers(Any),
         )
