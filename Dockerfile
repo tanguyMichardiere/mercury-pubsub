@@ -20,11 +20,11 @@ RUN rm src/main.rs
 
 COPY server/src src
 COPY server/sqlx-data.json .
-RUN SQLX_OFFLINE=true cargo build --release --bin=main --package=server --target $TARGET
+RUN SQLX_OFFLINE=true cargo install --path . --bin=main --target $TARGET
 COPY server/migrations migrations
 RUN sqlx migrate run
 
 FROM scratch
 
-COPY --from=builder /usr/src/app/target/$TARGET/release/main /server
+COPY --from=builder /usr/local/cargo/bin/main /server
 CMD ["/server"]
