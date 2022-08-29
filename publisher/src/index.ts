@@ -1,5 +1,3 @@
-import "whatwg-fetch";
-
 type Channels = Record<string, unknown>;
 
 export default class Publisher {
@@ -16,7 +14,10 @@ export default class Publisher {
     const response = await fetch(url.href, {
       method: "POST",
       body: JSON.stringify(data),
-      headers: { Authorization: `Bearer ${this.#key}` },
+      headers: {
+        Authorization: `Bearer ${this.#key}`,
+        "Content-Type": "application/json",
+      },
     });
     if (!response.ok) throw new Error(await response.text());
     return parseInt(await response.text());
