@@ -21,6 +21,7 @@ const Uuid = z.string().uuid();
 function userCommands(yargs: Argv) {
   return (
     yargs
+      .demandCommand(1)
       // user.list
       .command("list", "list users", async function () {
         console.log(await mercury.user.list());
@@ -84,6 +85,7 @@ function userCommands(yargs: Argv) {
 function channelCommands(yargs: Argv) {
   return (
     yargs
+      .demandCommand(1)
       // channel.list
       .command("list", "list channels", async function () {
         console.log(await mercury.channel.list());
@@ -97,10 +99,7 @@ function channelCommands(yargs: Argv) {
             .positional("name", { type: "string" })
             .positional("schema", {
               coerce(arg) {
-                if (typeof arg !== "string") {
-                  throw new Error("expected a JSON string");
-                }
-                return z.record(z.unknown()).parse(JSON.parse(arg));
+                return z.record(z.unknown()).parse(typeof arg === "string" ? JSON.parse(arg) : arg);
               },
             })
             .demandOption(["name", "schema"]);
@@ -132,6 +131,7 @@ function channelCommands(yargs: Argv) {
 function keyCommands(yargs: Argv) {
   return (
     yargs
+      .demandCommand(1)
       // key.list
       .command("list", "list keys", async function () {
         console.log(await mercury.key.list());
@@ -191,8 +191,10 @@ function keyCommands(yargs: Argv) {
   );
 }
 
-yargs(hideBin(process.argv))
+void yargs(hideBin(process.argv))
+  .detectLocale(false)
+  .demandCommand(1)
   .command("users", "manage users", userCommands)
   .command("channels", "manage channels", channelCommands)
   .command("keys", "manage keys", keyCommands)
-  .parseSync();
+  .parse();

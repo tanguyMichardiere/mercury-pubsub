@@ -29,7 +29,8 @@
     "format": "prettier -w src",
     "check-format": "prettier --check src",
     "lint": "eslint src",
-    "build": "tsc"
+    "build": "tsc",
+    "start": "node dist/bin.js"
   },
   "devDependencies": {
     "@trivago/prettier-plugin-sort-imports": "3.3.0",
