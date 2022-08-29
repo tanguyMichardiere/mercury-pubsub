@@ -37,6 +37,7 @@
     "react": "^18"
   },
   "devDependencies": {
+    "@mercury-pubsub/types": "../types",
     "@trivago/prettier-plugin-sort-imports": "3.3.0",
     "@types/react": "18.0.17",
     "@typescript-eslint/eslint-plugin": "5.35.1",

@@ -1,9 +1,10 @@
 import type { ReactNode } from "react";
 import { createContext, useContext, useEffect, useMemo } from "react";
 
+import type { Channels } from "@mercury-pubsub/types";
 import useEvent from "react-use-event-hook";
 
-import type { Channels, SubscribeOptions } from ".";
+import type { SubscribeOptions } from ".";
 import Subscriber from ".";
 
 const subscriberContext = createContext<Subscriber | undefined>(undefined);

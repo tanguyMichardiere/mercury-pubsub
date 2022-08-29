@@ -1,7 +1,6 @@
+import type { Channels } from "@mercury-pubsub/types";
 import type { EventSourceMessage, FetchEventSourceInit } from "@microsoft/fetch-event-source";
 import { fetchEventSource } from "@microsoft/fetch-event-source";
-
-export type Channels = Record<string, unknown>;
 
 export type SubscribeOptions<C extends keyof Channels> = Pick<
   FetchEventSourceInit,

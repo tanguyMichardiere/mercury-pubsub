@@ -12,9 +12,7 @@ const Home: NextPage = () => {
       console.log(response);
     },
     ondata(data) {
-      if (typeof data === "string") {
-        setMessages((messages) => [...messages, [new Date(), data]]);
-      }
+      setMessages((messages) => [...messages, [new Date(), data]]);
     },
   });
 

@@ -1,4 +1,4 @@
-type Channels = Record<string, unknown>;
+import type { Channels } from "@mercury-pubsub/types";
 
 export default class Publisher {
   #url: string;
