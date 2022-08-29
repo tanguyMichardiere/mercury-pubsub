@@ -97,6 +97,9 @@ function channelCommands(yargs: Argv) {
             .positional("name", { type: "string" })
             .positional("schema", {
               coerce(arg) {
+                if (typeof arg !== "string") {
+                  throw new Error("expected a JSON string");
+                }
                 return z.record(z.unknown()).parse(JSON.parse(arg));
               },
             })
@@ -191,4 +194,5 @@ function keyCommands(yargs: Argv) {
 yargs(hideBin(process.argv))
   .command("users", "manage users", userCommands)
   .command("channels", "manage channels", channelCommands)
-  .command("keys", "manage keys", keyCommands).argv;
+  .command("keys", "manage keys", keyCommands)
+  .parseSync();
