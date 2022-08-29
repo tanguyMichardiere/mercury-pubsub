@@ -1,6 +1,6 @@
 {
   "name": "@mercury-pubsub/publisher",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Self-deployable Server-Sent Events service with schema validation",
   "author": "Tanguy Michardière",
   "license": "MIT",

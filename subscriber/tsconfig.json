@@ -2,8 +2,8 @@
   "compilerOptions": {
     "target": "ES6",
     "lib": ["ES6", "DOM"],
-    "jsx": "preserve",
-    "module": "ES6",
+    "jsx": "react-jsx",
+    "module": "CommonJS",
     "moduleResolution": "Node",
     "declaration": true,
     "sourceMap": true,

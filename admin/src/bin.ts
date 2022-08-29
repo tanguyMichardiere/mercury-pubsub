@@ -1,5 +1,3 @@
-import { createInterface, cursorTo, moveCursor } from "node:readline";
-
 import "dotenv/config";
 import type { Argv } from "yargs";
 import yargs from "yargs";
@@ -12,27 +10,9 @@ const env = z
   .object({
     URL: z.string().url(),
     NAME: z.string(),
-    PASSWORD: z.optional(z.string()),
+    PASSWORD: z.string(),
   })
   .parse(process.env);
-
-if (env.PASSWORD === undefined) {
-  const rl = createInterface(process.stdin);
-  process.stdout.write("password:");
-  env.PASSWORD = await new Promise<string>(function (resolve) {
-    let answer: string;
-    rl.on("line", function (input) {
-      answer = input;
-      rl.close();
-    });
-    rl.on("close", function () {
-      resolve(answer);
-    });
-  });
-  moveCursor(process.stdout, 0, -1);
-  process.stdout.write(" ".repeat(env.PASSWORD.length + 9));
-  cursorTo(process.stdout, 0);
-}
 
 const mercury = new Mercury(env.URL, env.NAME, env.PASSWORD);
 
@@ -106,7 +86,7 @@ function channelCommands(yargs: Argv) {
             .positional("name", { type: "string" })
             .positional("schema", {
               coerce(arg) {
-                return z.record(z.unknown()).parse(arg);
+                return z.record(z.unknown()).parse(JSON.parse(arg));
               },
             })
             .demandOption(["name", "schema"]);
@@ -197,8 +177,7 @@ function keyCommands(yargs: Argv) {
   );
 }
 
-await yargs(hideBin(process.argv))
+yargs(hideBin(process.argv))
   .command("users", "manage users", userCommands)
   .command("channels", "manage channels", channelCommands)
-  .command("keys", "manage keys", keyCommands)
-  .parse();
+  .command("keys", "manage keys", keyCommands).argv;

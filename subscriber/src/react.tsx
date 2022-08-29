@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { createContext, useContext, useEffect, useRef } from "react";
 
 import type { Channels, SubscribeOptions } from ".";
@@ -5,10 +6,18 @@ import Subscriber from ".";
 
 const subscriberContext = createContext<Subscriber | undefined>(undefined);
 
-export default function SubscriberProvider(props: { url: string; key: string }): JSX.Element {
-  const subscriber = useRef(new Subscriber(props.url, props.key));
+export default function SubscriberProvider(props: {
+  url: string;
+  _key: string;
+  children: ReactNode;
+}): JSX.Element {
+  const subscriber = useRef(new Subscriber(props.url, props._key));
 
-  return <subscriberContext.Provider value={subscriber.current}></subscriberContext.Provider>;
+  return (
+    <subscriberContext.Provider value={subscriber.current}>
+      {props.children}
+    </subscriberContext.Provider>
+  );
 }
 
 export function useSubscribe<C extends keyof Channels>(
@@ -21,16 +30,16 @@ export function useSubscribe<C extends keyof Channels>(
     throw new Error("no subscriber context");
   }
 
-  const abortController = useRef(new AbortController()).current;
+  const abortController = useRef(new AbortController());
 
   useEffect(function () {
     subscriber
-      .subscribe(channel, { signal: abortController.signal, onopen, ondata, onclose })
+      .subscribe(channel, { signal: abortController.current.signal, onopen, ondata, onclose })
       .catch(function (error) {
         console.error(error);
       });
     return function () {
-      abortController.abort();
+      abortController.current.abort();
     };
   });
 }

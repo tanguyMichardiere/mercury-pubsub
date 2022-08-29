@@ -1,4 +1,4 @@
-import "whatwg-fetch";
+import fetch from "node-fetch";
 import { z } from "zod";
 
 const Uuid = z.string().uuid();
@@ -126,8 +126,7 @@ class UserDelegate {
       headers: { Authorization: this.#authorizationHeader },
     });
     if (!response.ok) throw new Error(await response.text());
-    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
-    return (await response.json()) as Array<User>;
+    return z.array(User).parse(await response.json());
   }
 
   async create(name: string, password: string): Promise<User> {
@@ -141,8 +140,7 @@ class UserDelegate {
       body: JSON.stringify({ name, password }),
     });
     if (!response.ok) throw new Error(await response.text());
-    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
-    return (await response.json()) as User;
+    return User.parse(await response.json());
   }
 
   async rename(name: string): Promise<void> {
@@ -198,8 +196,7 @@ class ChannelDelegate {
       headers: { Authorization: this.#authorizationHeader },
     });
     if (!response.ok) throw new Error(await response.text());
-    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
-    return (await response.json()) as Array<Channel>;
+    return z.array(Channel).parse(await response.json());
   }
 
   async create(name: string, schema: Record<string, unknown>): Promise<Channel> {
@@ -213,8 +210,7 @@ class ChannelDelegate {
       body: JSON.stringify({ name, schema }),
     });
     if (!response.ok) throw new Error(await response.text());
-    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
-    return (await response.json()) as Channel;
+    return Channel.parse(await response.json());
   }
 
   async delete(id: string): Promise<void> {
@@ -242,8 +238,7 @@ class KeyDelegate {
       headers: { Authorization: this.#authorizationHeader },
     });
     if (!response.ok) throw new Error(await response.text());
-    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
-    return (await response.json()) as Array<Key>;
+    return z.array(Key).parse(await response.json());
   }
 
   async create(type: KeyType, channels: Array<string>): Promise<string> {
@@ -266,8 +261,7 @@ class KeyDelegate {
       headers: { Authorization: this.#authorizationHeader },
     });
     if (!response.ok) throw new Error(await response.text());
-    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
-    return (await response.json()) as Array<Channel>;
+    return z.array(Channel).parse(await response.json());
   }
 
   async delete(id: string): Promise<void> {

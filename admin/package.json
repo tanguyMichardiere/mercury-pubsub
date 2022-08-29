@@ -1,6 +1,6 @@
 {
   "name": "@mercury-pubsub/admin",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Self-deployable Server-Sent Events service with schema validation",
   "author": "Tanguy Michardière",
   "license": "MIT",
@@ -23,17 +23,15 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "bin": {
-    "mercury": "dist/bin.js"
+    "mercury": "dist/bin.mjs"
   },
+  "type": "module",
   "scripts": {
     "format": "prettier -w src",
     "check-format": "prettier --check src",
     "lint": "eslint src",
     "build": "tsc",
     "deploy": "npm publish --access public"
-  },
-  "dependencies": {
-    "whatwg-fetch": "3.6.2"
   },
   "devDependencies": {
     "@trivago/prettier-plugin-sort-imports": "3.3.0",
@@ -52,5 +50,8 @@
     "typescript": "4.8.2",
     "yargs": "17.5.1",
     "zod": "3.18.0"
+  },
+  "dependencies": {
+    "node-fetch": "3.2.10"
   }
 }

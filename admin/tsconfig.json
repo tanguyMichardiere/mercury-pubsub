@@ -1,7 +1,7 @@
 {
   "compilerOptions": {
     "target": "ES6",
-    "lib": ["ES6", "DOM"],
+    "lib": ["ES6"],
     "module": "ES6",
     "moduleResolution": "Node",
     "declaration": true,
@@ -22,5 +22,5 @@
     "noPropertyAccessFromIndexSignature": true,
     "skipLibCheck": true
   },
-  "files": ["src/index.ts"]
+  "include": ["src/**/*.ts"]
 }
