@@ -1,6 +1,7 @@
 {
   "name": "mercury-pubsub",
   "version": "0.1.2",
+  "private": true,
   "description": "Self-deployable Server-Sent Events service with schema validation",
   "author": "Tanguy Michardière",
   "license": "MIT",
