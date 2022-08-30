@@ -34,7 +34,8 @@
     "lint": "turbo run lint",
     "build": "turbo run build",
     "test": "turbo run test",
-    "publish": "lerna publish"
+    "prepublish": "turbo run check-format lint test",
+    "publish": "lerna publish --no-private"
   },
   "devDependencies": {
     "lerna": "5.4.3",

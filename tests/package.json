@@ -1,6 +1,5 @@
 {
   "name": "@mercury-pubsub/tests",
-  "version": "0.1.4",
   "private": true,
   "author": "Tanguy Michardière",
   "license": "MIT",
@@ -12,9 +11,9 @@
     "test": "jest"
   },
   "dependencies": {
-    "@mercury-pubsub/admin": "0.1.4",
-    "@mercury-pubsub/publisher": "0.1.4",
-    "@mercury-pubsub/subscriber": "0.1.4"
+    "@mercury-pubsub/admin": "*",
+    "@mercury-pubsub/publisher": "*",
+    "@mercury-pubsub/subscriber": "*"
   },
   "devDependencies": {
     "@babel/preset-env": "7.18.10",
