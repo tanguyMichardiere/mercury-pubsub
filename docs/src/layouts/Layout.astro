@@ -1,0 +1,22 @@
+---
+import "@fontsource/inter";
+
+export interface Props {
+  lang: "en";
+  title: string;
+}
+
+const { lang, title } = Astro.props as Props;
+---
+
+<html lang={lang} class="h-full">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width" />
+    <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+    <title>{title}</title>
+  </head>
+  <body class="h-full">
+    <slot />
+  </body>
+</html>

@@ -1,0 +1,40 @@
+{
+  "[astro][json][jsonc][markdown]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.tabSize": 2
+  },
+  "[markdown]": {
+    "editor.quickSuggestions": {
+      "comments": "off",
+      "other": "off",
+      "strings": "off"
+    },
+    "editor.wordWrap": "on"
+  },
+  "editor.codeActionsOnSave": {
+    "source.fixAll": true,
+    "source.organizeImports": true
+  },
+  "editor.formatOnSave": true,
+  "editor.quickSuggestions": {
+    "strings": true
+  },
+  "editor.rulers": [100],
+  "editor.wordWrap": "bounded",
+  "editor.wordWrapColumn": 100,
+  "eslint.validate": ["astro", "markdown"],
+  "explorer.fileNesting.enabled": true,
+  "explorer.fileNesting.patterns": {
+    "README.md": "LICENSE",
+    "astro.config.ts": ".eslintrc.js, .prettierrc.js, *.config.cjs, *.config.js",
+    "package.json": "package-lock.json"
+  },
+  "files.insertFinalNewline": true,
+  "files.trimFinalNewlines": true,
+  "files.trimTrailingWhitespace": true,
+  "git.branchProtection": ["main"],
+  "json.format.enable": false,
+  "prettier.documentSelectors": ["**/*.astro"],
+  "tailwindCSS.emmetCompletions": true,
+  "tailwindCSS.validate": true
+}
