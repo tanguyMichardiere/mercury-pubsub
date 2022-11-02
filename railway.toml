@@ -1,5 +1,6 @@
 [build]
 builder = "nixpacks"
+watchPatterns = ["server/**"]
 dockerfilePath = "server/Dockerfile.railway"
 
 [deploy]

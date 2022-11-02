@@ -8,8 +8,6 @@ ENV TARGET_CC="/usr/bin/clang"
 ENV TARGET_AR="/usr/bin/llvm-ar"
 
 WORKDIR /usr/src/
-RUN apt-get update && apt-get install -y clang llvm
-RUN cargo install sqlx-cli --no-default-features --features rustls,postgres
 RUN rustup target add $TARGET
 
 RUN cargo new app
