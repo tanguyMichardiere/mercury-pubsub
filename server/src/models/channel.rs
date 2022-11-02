@@ -4,9 +4,8 @@ use serde_json::Value;
 use sqlx::PgPool;
 use uuid::Uuid;
 
+use self::error::{Error, Result};
 use crate::models::key::Key;
-
-use error::{Error, Result};
 
 pub(crate) struct RawChannel {
     id: Uuid,

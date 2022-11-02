@@ -10,18 +10,17 @@ use tokio_stream::wrappers::BroadcastStream;
 use tokio_stream::StreamExt;
 use tracing::{error, instrument};
 
+use self::error::{Error, Result};
 use crate::models::channel::Channel;
 use crate::models::key::Key;
 use crate::state::SharedState;
-
-use error::{Error, Result};
 
 pub(crate) fn app(state: SharedState) -> Router<SharedState> {
     Router::with_state(state).route("/:channel_name", get(subscribe).post(publish))
 }
 
 #[instrument]
-async fn subscribe(
+pub(crate) async fn subscribe(
     State(state): State<SharedState>,
     key: Key,
     Path(channel_name): Path<String>,
@@ -45,7 +44,7 @@ async fn subscribe(
 }
 
 #[instrument]
-async fn publish(
+pub(crate) async fn publish(
     State(state): State<SharedState>,
     key: Key,
     Path(channel_name): Path<String>,

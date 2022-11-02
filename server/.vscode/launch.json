@@ -17,20 +17,6 @@
       },
       "args": [],
       "cwd": "${workspaceFolder}"
-    },
-    {
-      "type": "lldb",
-      "request": "launch",
-      "name": "Debug integration test 'auth'",
-      "cargo": {
-        "args": ["test", "--no-run", "--test=auth", "--package=server"],
-        "filter": {
-          "name": "auth",
-          "kind": "test"
-        }
-      },
-      "args": [],
-      "cwd": "${workspaceFolder}"
     }
   ]
 }

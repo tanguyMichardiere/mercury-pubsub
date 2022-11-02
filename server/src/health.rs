@@ -1,8 +1,7 @@
 use axum::extract::State;
 use tracing::instrument;
 
-use error::Result;
-
+use self::error::Result;
 use crate::state::SharedState;
 
 /// Check that the database connexion works, and that all migrations are successfully applied.

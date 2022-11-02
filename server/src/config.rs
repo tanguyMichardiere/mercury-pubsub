@@ -1,5 +1,7 @@
+use dotenvy::dotenv;
 use figment::providers::{Env, Serialized};
 use figment::Figment;
+use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -14,24 +16,18 @@ pub struct Config {
     pub port: u16,
     pub log: String,
     pub log_format: LogFormat,
+    pub database_url: String,
 }
 
-impl Config {
-    pub fn from_env() -> figment::error::Result<Config> {
-        Figment::from(Serialized::defaults(Config::default()))
-            // get the port env var as PORT or MERCURY_PORT
-            .merge(Env::raw().only(&["port"]))
-            .merge(Env::prefixed("MERCURY_"))
-            .extract()
-    }
-}
-
-impl Default for Config {
-    fn default() -> Self {
-        Self {
-            port: 8080,
-            log: "warn".to_owned(),
-            log_format: LogFormat::Json,
-        }
-    }
-}
+pub static CONFIG: Lazy<Config> = Lazy::new(|| {
+    dotenv().ok();
+    Figment::new()
+        // default values
+        .join(Serialized::default("port", 8080))
+        .join(Serialized::default("log_format", LogFormat::Json))
+        // get the database_url and port config values with or without the MERCURY_ prefix
+        .merge(Env::raw().only(&["port", "database_url"]))
+        .merge(Env::prefixed("MERCURY_"))
+        .extract()
+        .expect("config")
+});

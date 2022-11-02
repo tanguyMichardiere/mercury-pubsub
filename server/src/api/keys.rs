@@ -6,12 +6,11 @@ use serde::Deserialize;
 use tracing::instrument;
 use uuid::Uuid;
 
+use self::error::Result;
 use crate::models::channel::Channel;
 use crate::models::key::{Key, KeyType};
 use crate::models::user::User;
 use crate::state::SharedState;
-
-use error::Result;
 
 pub(crate) fn app(state: SharedState) -> Router<SharedState> {
     Router::with_state(state)

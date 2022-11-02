@@ -7,11 +7,10 @@ use tracing::instrument;
 use uuid::Uuid;
 use validator::Validate;
 
+use self::error::{Error, Result};
 use crate::api::extract::validated_json::ValidatedJson;
 use crate::models::user::User;
 use crate::state::SharedState;
-
-use error::{Error, Result};
 
 pub(crate) fn app(state: SharedState) -> Router<SharedState> {
     Router::with_state(state)

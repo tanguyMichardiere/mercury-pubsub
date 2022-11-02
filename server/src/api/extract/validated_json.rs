@@ -5,7 +5,7 @@ use hyper::Request;
 use serde::de::DeserializeOwned;
 use validator::Validate;
 
-use error::{Error, Result};
+use self::error::{Error, Result};
 
 pub(crate) struct ValidatedJson<T>(pub(crate) T);
 

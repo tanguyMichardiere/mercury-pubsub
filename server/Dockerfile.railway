@@ -14,14 +14,14 @@ RUN rustup target add $TARGET
 
 RUN cargo new app
 WORKDIR /usr/src/app
-COPY server/Cargo.toml server/Cargo.lock ./
+COPY Cargo.toml Cargo.lock ./
 RUN cargo build --release --target $TARGET
 RUN rm src/main.rs
 
-COPY server/src src
-COPY server/sqlx-data.json .
+COPY src src
+COPY sqlx-data.json .
 RUN SQLX_OFFLINE=true cargo install --path . --bin=main --target $TARGET
-COPY server/migrations migrations
+COPY migrations migrations
 RUN sqlx migrate run
 
 FROM scratch

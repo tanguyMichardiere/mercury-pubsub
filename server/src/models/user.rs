@@ -7,8 +7,7 @@ use serde::Serialize;
 use sqlx::PgPool;
 use uuid::Uuid;
 
-use error::{Error, Result};
-
+use self::error::{Error, Result};
 use crate::state::SharedState;
 
 /// An application user.
@@ -163,13 +162,16 @@ where
     async fn from_request_parts(parts: &mut Parts, state: &S) -> Result<Self> {
         let authorization_header =
             TypedHeader::<Authorization<Basic>>::from_request_parts(parts, state).await?;
+
         let state = SharedState::from_ref(state);
+
         let user = Self::get_by_name_and_password(
             &state.read().await.pool,
             authorization_header.username(),
             authorization_header.password(),
         )
         .await?;
+
         Ok(user)
     }
 }

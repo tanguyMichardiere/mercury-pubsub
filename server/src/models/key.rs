@@ -1,5 +1,5 @@
 use axum::extract::{FromRef, FromRequestParts};
-use axum::headers::authorization::Bearer;
+use axum::headers::authorization::Basic;
 use axum::headers::Authorization;
 use axum::http::request::Parts;
 use axum::{async_trait, TypedHeader};
@@ -7,10 +7,9 @@ use serde::{Deserialize, Serialize};
 use sqlx::{PgPool, Postgres, QueryBuilder};
 use uuid::Uuid;
 
+use self::error::{Error, Result};
 use crate::models::channel::Channel;
 use crate::state::SharedState;
-
-use error::{Error, Result};
 
 #[derive(Debug, Clone, Copy, Deserialize, Serialize, sqlx::Type)]
 #[serde(rename_all = "camelCase")]
@@ -170,16 +169,17 @@ where
     type Rejection = Error;
 
     /// Parse the Authorization header, expecting a token containing the key's id and secret
-    /// separated by a semi-colon and returning the key directly
     async fn from_request_parts(parts: &mut Parts, state: &S) -> Result<Self> {
-        let authorization_header_value =
-            TypedHeader::<Authorization<Bearer>>::from_request_parts(parts, state).await?;
-        let token = authorization_header_value.token();
-        let (id, secret) = token.split_once(';').ok_or(Error::MissingSemiColon)?;
-        let id = Uuid::try_parse(id).map_err(|_| Error::InvalidKeyId)?;
-        let secret = Secret(secret.to_owned());
+        let authorization_header =
+            TypedHeader::<Authorization<Basic>>::from_request_parts(parts, state).await?;
+        let id =
+            Uuid::try_parse(authorization_header.username()).map_err(|_| Error::InvalidKeyId)?;
+        let secret = Secret(authorization_header.password().to_owned());
+
         let state = SharedState::from_ref(state);
+
         let key = Key::get(&state.read().await.pool, id).await?;
+
         if key.check_secret(&state.read().await.pool, &secret).await? {
             Ok(key)
         } else {
@@ -200,8 +200,6 @@ pub(crate) mod error {
     pub(crate) enum Error {
         #[error(transparent)]
         TypedHeaderRejection(#[from] TypedHeaderRejection),
-        #[error("Missing semi-colon in API key")]
-        MissingSemiColon,
         #[error("Invalid API key ID")]
         InvalidKeyId,
         #[error("Invalid secret key")]
@@ -222,9 +220,6 @@ pub(crate) mod error {
             debug!(?self);
             match self {
                 Error::TypedHeaderRejection(error) => error.into_response(),
-                Error::MissingSemiColon => {
-                    (StatusCode::UNAUTHORIZED, self.to_string()).into_response()
-                }
                 Error::InvalidKeyId => (StatusCode::UNAUTHORIZED, self.to_string()).into_response(),
                 Error::InvalidSecretKey => {
                     (StatusCode::UNAUTHORIZED, self.to_string()).into_response()

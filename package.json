@@ -40,6 +40,8 @@
     "publish": "lerna publish --no-private"
   },
   "devDependencies": {
+    "aws-cdk": "2.45.0",
+    "aws-cdk-lib": "2.45.0",
     "husky": "8.0.1",
     "lerna": "5.4.3",
     "npm-check-updates": "16.0.6",
