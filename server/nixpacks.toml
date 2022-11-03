@@ -1,9 +1,6 @@
 [phases.setup]
 nixPkgs = ["...", "sqlx-cli"]
 
-[phases.build]
-cmds = ["SQLX_OFFLINE=true cargo build --release"]
-
 [phases.migrate]
 cmds = ["sqlx migrate run"]
 dependsOn = ["build"]
