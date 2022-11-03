@@ -24,6 +24,7 @@ pub static CONFIG: Lazy<Config> = Lazy::new(|| {
     Figment::new()
         // default values
         .join(Serialized::default("port", 8080))
+        .join(Serialized::default("log", "error"))
         .join(Serialized::default("log_format", LogFormat::Json))
         // get the database_url and port config values with or without the MERCURY_ prefix
         .merge(Env::raw().only(&["port", "database_url"]))
