@@ -1,6 +1,5 @@
 [build]
 builder = "nixpacks"
-watchPatterns = ["Cargo.toml", "Cargo.lock", "sqlx-data.json", "migrations/**", "src/**"]
 
 [deploy]
 healthcheckPath = "/health"
