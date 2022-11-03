@@ -200,18 +200,6 @@
     },
     "query": "\n            INSERT INTO \"User\" (name, password_hash, rank)\n                VALUES ($1, crypt($2, gen_salt('md5')), $3)\n            RETURNING *\n            "
   },
-  "7538721029e5f3af1942c065c171fc0dc82fdf976f875118a91d534f320e6b6c": {
-    "describe": {
-      "columns": [],
-      "nullable": [],
-      "parameters": {
-        "Left": [
-          "Uuid"
-        ]
-      }
-    },
-    "query": "\n            DELETE FROM \"Access\"\n                WHERE key_id = $1\n            "
-  },
   "75722bc6d2e5171ac15012aebb2219f5db4336d8db7b30dfd47fe2a31556db5c": {
     "describe": {
       "columns": [],
@@ -223,27 +211,6 @@
       }
     },
     "query": "\n                DELETE FROM \"User\"\n                    WHERE id = $1\n                "
-  },
-  "86a1db5fdb78787bd4085d1fcfea7e3f2f40426934edeba4cd08ec312322175e": {
-    "describe": {
-      "columns": [
-        {
-          "name": "schema",
-          "ordinal": 0,
-          "type_info": "Jsonb"
-        }
-      ],
-      "nullable": [
-        false
-      ],
-      "parameters": {
-        "Left": [
-          "Jsonb",
-          "Uuid"
-        ]
-      }
-    },
-    "query": "\n            UPDATE \"Channel\"\n                SET schema = $1\n                WHERE id = $2\n            RETURNING schema\n            "
   },
   "8efd1242602288b80fd3b9b2fabfbf9396db6615efb8e26d90f1991b17c9ba67": {
     "describe": {
@@ -440,27 +407,6 @@
       }
     },
     "query": "\n            UPDATE \"User\"\n                SET password_hash = crypt($1, gen_salt('md5'))\n                WHERE id = $2\n            RETURNING password_hash\n            "
-  },
-  "d2efd6aa242847a1a1ddaea2b47f6831419397fa2cf8b71a8019b65fc3b31883": {
-    "describe": {
-      "columns": [
-        {
-          "name": "name",
-          "ordinal": 0,
-          "type_info": "Varchar"
-        }
-      ],
-      "nullable": [
-        false
-      ],
-      "parameters": {
-        "Left": [
-          "Varchar",
-          "Uuid"
-        ]
-      }
-    },
-    "query": "\n            UPDATE \"Channel\"\n                SET name = $1\n                WHERE id = $2\n            RETURNING name\n            "
   },
   "dbda9dd65c92e02e1f2d197301033fb91d1f420a1d6e25507e9e71a63c1d44eb": {
     "describe": {
